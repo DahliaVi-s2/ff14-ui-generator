@@ -372,9 +372,18 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-zinc-900 text-white flex flex-col items-center gap-8 p-8">
 
-      <h1 className="text-3xl font-bold">
-        FF14 Job Level Generator
-      </h1>
+      {/* タイトル */}
+      <div className="text-center">
+
+        <h1 className="text-4xl font-black mb-3">
+          FF14 Job Level Generator
+        </h1>
+
+        <p className="text-zinc-300 max-w-2xl leading-relaxed">
+          FF14のジョブレベル透過画像を生成できる無料ツールです。
+        </p>
+
+      </div>
 
       {/* カテゴリ */}
       <div className="flex flex-wrap gap-3 justify-center">
@@ -429,8 +438,8 @@ export default function Home() {
               <Image
                 src={job.icon}
                 alt=""
-                width={42}
-                height={42}
+                width={36}
+                height={36}
               />
 
               <input
@@ -448,7 +457,7 @@ export default function Home() {
                 className="
                   bg-zinc-900
                   rounded
-                  w-[60px]
+                  w-[52px]
                   text-center
                   p-1
                   font-bold
@@ -540,6 +549,7 @@ export default function Home() {
             </span>
           </div>
         ))}
+
       </div>
 
     </main>

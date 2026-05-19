@@ -1,8 +1,29 @@
 export default function TermsPage() {
   return (
-    <main className="min-h-screen bg-zinc-900 text-white p-8">
+<main className="min-h-screen bg-zinc-900 text-white p-8">
 
-      <div className="max-w-4xl mx-auto">
+  <div className="max-w-4xl mx-auto">
+
+    <div className="mb-8">
+      <a
+        href="/"
+        className="
+          inline-flex
+          items-center
+          gap-2
+          bg-zinc-800
+          hover:bg-zinc-700
+          transition
+          px-4
+          py-2
+          rounded-xl
+          font-bold
+          text-white
+        "
+      >
+        ← トップへ戻る
+      </a>
+    </div>
 
         <h1 className="text-4xl font-black mb-8">
           利用規約

@@ -340,6 +340,11 @@ export default function Home() {
   const generateImage = async () => {
     if (!captureRef.current) return
 
+    // DOM更新待機
+    await new Promise((resolve) =>
+      setTimeout(resolve, 100)
+    )
+
     const dataUrl = await toPng(
       captureRef.current,
       {
@@ -372,10 +377,7 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-zinc-900 text-white flex flex-col items-center gap-8 p-8">
 
-      {/* ========================= */}
       {/* HEADER */}
-      {/* ========================= */}
-
       <div className="text-center max-w-4xl">
 
         <h1 className="text-5xl font-black mb-4">
@@ -394,10 +396,7 @@ export default function Home() {
 
       </div>
 
-      {/* ========================= */}
       {/* CATEGORY */}
-      {/* ========================= */}
-
       <div className="flex flex-wrap gap-3 justify-center">
 
         {categoryButtons.map((category) => (
@@ -429,10 +428,7 @@ export default function Home() {
 
       </div>
 
-      {/* ========================= */}
       {/* INPUT UI */}
-      {/* ========================= */}
-
       <div className="bg-zinc-800 rounded-2xl p-6 shadow-2xl">
 
         <div className="grid grid-cols-8 gap-3">
@@ -517,10 +513,7 @@ export default function Home() {
 
       </div>
 
-      {/* ========================= */}
-      {/* PREVIEW */}
-      {/* ========================= */}
-
+      {/* PNG生成対象 */}
       <div
         ref={captureRef}
         className="
@@ -541,12 +534,11 @@ export default function Home() {
               gap-1
             "
           >
-            <Image
+            {/* ←ここが重要 */}
+            <img
               src={job.icon}
               alt=""
-              width={64}
-              height={64}
-              className="drop-shadow-lg"
+              className="w-16 h-16 drop-shadow-lg"
             />
 
             <span
@@ -571,10 +563,7 @@ export default function Home() {
         ))}
       </div>
 
-      {/* ========================= */}
       {/* ABOUT */}
-      {/* ========================= */}
-
       <div className="max-w-4xl text-zinc-300 leading-relaxed space-y-5">
 
         <h2 className="text-2xl font-bold text-white">
@@ -588,25 +577,9 @@ export default function Home() {
           簡単に生成できる無料Webツールです。
         </p>
 
-        <p>
-          タンク・ヒーラー・DPS・クラフター・ギャザラー・リミテッドジョブに対応しており、
-          OBS配信オーバーレイ、
-          SNS投稿、
-          自己紹介カード、
-          コミュニティ募集画像などに利用できます。
-        </p>
-
-        <p>
-          レベル未入力や「非表示」を設定したジョブは
-          PNG画像に表示されません。
-        </p>
-
       </div>
 
-      {/* ========================= */}
       {/* FOOTER */}
-      {/* ========================= */}
-
       <footer className="mt-10 flex flex-wrap justify-center gap-6 text-sm text-zinc-400">
 
         <a

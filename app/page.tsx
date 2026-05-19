@@ -624,7 +624,7 @@ export default function Home() {
         </a>
 
         <a
-          href="https://x.com/あなたのID"
+          href="https://x.com/vrc_DahliaVi"
           target="_blank"
           rel="noopener noreferrer"
           className="hover:text-white underline"

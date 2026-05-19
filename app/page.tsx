@@ -372,20 +372,32 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-zinc-900 text-white flex flex-col items-center gap-8 p-8">
 
-      {/* タイトル */}
-      <div className="text-center">
+      {/* ========================= */}
+      {/* HEADER */}
+      {/* ========================= */}
 
-        <h1 className="text-4xl font-black mb-3">
+      <div className="text-center max-w-4xl">
+
+        <h1 className="text-5xl font-black mb-4">
           FF14 Job Level Generator
         </h1>
 
-        <p className="text-zinc-300 max-w-2xl leading-relaxed">
+        <p className="text-zinc-300 text-lg leading-relaxed">
           FF14のジョブレベル透過画像を生成できる無料ツールです。
+          OBS配信・SNS投稿・プロフィール画像作成などに利用できます。
+        </p>
+
+        <p className="text-zinc-500 text-sm mt-4 leading-relaxed">
+          このサイトはFINAL FANTASY XIVの非公式ファンメイドツールです。
+          FINAL FANTASY XIV © SQUARE ENIX
         </p>
 
       </div>
 
-      {/* カテゴリ */}
+      {/* ========================= */}
+      {/* CATEGORY */}
+      {/* ========================= */}
+
       <div className="flex flex-wrap gap-3 justify-center">
 
         {categoryButtons.map((category) => (
@@ -417,8 +429,11 @@ export default function Home() {
 
       </div>
 
-      {/* 入力UI */}
-      <div className="bg-zinc-800 rounded-2xl p-6">
+      {/* ========================= */}
+      {/* INPUT UI */}
+      {/* ========================= */}
+
+      <div className="bg-zinc-800 rounded-2xl p-6 shadow-2xl">
 
         <div className="grid grid-cols-8 gap-3">
 
@@ -494,13 +509,18 @@ export default function Home() {
             rounded-xl
             font-bold
             text-lg
+            shadow-lg
           "
         >
           透過PNG生成
         </button>
+
       </div>
 
-      {/* PNG生成対象 */}
+      {/* ========================= */}
+      {/* PREVIEW */}
+      {/* ========================= */}
+
       <div
         ref={captureRef}
         className="
@@ -549,8 +569,70 @@ export default function Home() {
             </span>
           </div>
         ))}
+      </div>
+
+      {/* ========================= */}
+      {/* ABOUT */}
+      {/* ========================= */}
+
+      <div className="max-w-4xl text-zinc-300 leading-relaxed space-y-5">
+
+        <h2 className="text-2xl font-bold text-white">
+          このサイトについて
+        </h2>
+
+        <p>
+          FF14 Job Level Generatorは、
+          FINAL FANTASY XIV向けの
+          ジョブレベル透過PNG画像を
+          簡単に生成できる無料Webツールです。
+        </p>
+
+        <p>
+          タンク・ヒーラー・DPS・クラフター・ギャザラー・リミテッドジョブに対応しており、
+          OBS配信オーバーレイ、
+          SNS投稿、
+          自己紹介カード、
+          コミュニティ募集画像などに利用できます。
+        </p>
+
+        <p>
+          レベル未入力や「非表示」を設定したジョブは
+          PNG画像に表示されません。
+        </p>
 
       </div>
+
+      {/* ========================= */}
+      {/* FOOTER */}
+      {/* ========================= */}
+
+      <footer className="mt-10 flex flex-wrap justify-center gap-6 text-sm text-zinc-400">
+
+        <a
+          href="/privacy"
+          className="hover:text-white underline"
+        >
+          プライバシーポリシー
+        </a>
+
+        <a
+          href="/terms"
+          className="hover:text-white underline"
+        >
+          利用規約
+        </a>
+
+        <a
+          href="https://x.com/あなたのID"
+          target="_blank"
+          rel="noopener noreferrer"
+          className="hover:text-white underline"
+        >
+          お問い合わせ
+        </a>
+
+      </footer>
 
     </main>
   )

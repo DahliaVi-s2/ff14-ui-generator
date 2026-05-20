@@ -17,27 +17,26 @@ export default function HomePage() {
           FF14のジョブレベル透過画像を
           無料で生成できるWebツールです。
           <br />
-          OBS配信、SNS投稿、プロフィール画像、
-          FC募集、コミュニティ共有などに利用できます。
+          SNS投稿、プロフィール画像などに利用できます。
         </p>
 
         <div className="flex flex-wrap justify-center gap-4 mt-10">
 
           <Link
-            href="/generator"
-            className="
-              bg-blue-500
-              hover:bg-blue-400
-              px-8
-              py-4
-              rounded-2xl
-              font-bold
-              text-lg
-              transition
-            "
-          >
-            ジェネレーターを使う
-          </Link>
+  href="/"
+  className="
+    bg-blue-500
+    hover:bg-blue-400
+    px-8
+    py-4
+    rounded-2xl
+    font-bold
+    text-lg
+    transition
+  "
+>
+  ジェネレーターを使う
+</Link>
 
           <Link
             href="/howto"
@@ -75,7 +74,7 @@ export default function HomePage() {
 
             <p className="text-zinc-300 leading-relaxed">
               背景透過PNGをワンクリックで生成。
-              OBS配信やサムネイル制作にも最適です。
+            
             </p>
           </div>
 
@@ -128,7 +127,6 @@ export default function HomePage() {
           </p>
 
           <p>
-            配信者、FC募集、
             SNS投稿ユーザー向けに
             見やすいジョブUIを
             手軽に作成できることを目的としています。

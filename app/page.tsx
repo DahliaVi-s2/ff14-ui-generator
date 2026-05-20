@@ -580,32 +580,53 @@ export default function Home() {
       </div>
 
       {/* FOOTER */}
-      <footer className="mt-10 flex flex-wrap justify-center gap-6 text-sm text-zinc-400">
+<footer className="mt-10 flex flex-wrap justify-center gap-6 text-sm text-zinc-400">
 
-        <a
-          href="/privacy"
-          className="hover:text-white underline"
-        >
-          プライバシーポリシー
-        </a>
+  <a
+    href="/about"
+    className="hover:text-white underline"
+  >
+    About
+  </a>
 
-        <a
-          href="/terms"
-          className="hover:text-white underline"
-        >
-          利用規約
-        </a>
+  <a
+    href="/howto"
+    className="hover:text-white underline"
+  >
+    HowTo
+  </a>
 
-        <a
-          href="https://x.com/vrc_DahliaVi"
-          target="_blank"
-          rel="noopener noreferrer"
-          className="hover:text-white underline"
-        >
-          お問い合わせ
-        </a>
+  <a
+    href="/sample"
+    className="hover:text-white underline"
+  >
+    Sample
+  </a>
 
-      </footer>
+  <a
+    href="/privacy"
+    className="hover:text-white underline"
+  >
+    プライバシーポリシー
+  </a>
+
+  <a
+    href="/terms"
+    className="hover:text-white underline"
+  >
+    利用規約
+  </a>
+
+  <a
+    href="https://x.com/vrc_DahliaVi"
+    target="_blank"
+    rel="noopener noreferrer"
+    className="hover:text-white underline"
+  >
+    お問い合わせ
+  </a>
+
+</footer>
 
     </main>
   )

@@ -54,58 +54,10 @@ const jobs = [
     dotIcon: '/jobs-dot/Sage_dot.png',
   },
   {
-    id: 'mnk',
-    name: 'Monk',
-    jpIcon: '/jobs-kanji/Monk_jp.png',
-    dotIcon: '/jobs-dot/Monk_dot.png',
-  },
-  {
-    id: 'drg',
-    name: 'Dragoon',
-    jpIcon: '/jobs-kanji/Dragoon_jp.png',
-    dotIcon: '/jobs-dot/Dragoon_dot.png',
-  },
-  {
-    id: 'nin',
-    name: 'Ninja',
-    jpIcon: '/jobs-kanji/Ninja_jp.png',
-    dotIcon: '/jobs-dot/Ninja_dot.png',
-  },
-  {
     id: 'sam',
     name: 'Samurai',
     jpIcon: '/jobs-kanji/Samurai_jp.png',
     dotIcon: '/jobs-dot/Samurai_dot.png',
-  },
-  {
-    id: 'rpr',
-    name: 'Reaper',
-    jpIcon: '/jobs-kanji/Reaper_jp.png',
-    dotIcon: '/jobs-dot/Reaper_dot.png',
-  },
-  {
-    id: 'vpr',
-    name: 'Viper',
-    jpIcon: '/jobs-kanji/Viper_jp.png',
-    dotIcon: '/jobs-dot/Viper_dot.png',
-  },
-  {
-    id: 'brd',
-    name: 'Bard',
-    jpIcon: '/jobs-kanji/Bard_jp.png',
-    dotIcon: '/jobs-dot/Bard_dot.png',
-  },
-  {
-    id: 'mch',
-    name: 'Machinist',
-    jpIcon: '/jobs-kanji/Machinist_jp.png',
-    dotIcon: '/jobs-dot/Machinist_dot.png',
-  },
-  {
-    id: 'dnc',
-    name: 'Dancer',
-    jpIcon: '/jobs-kanji/Dancer_jp.png',
-    dotIcon: '/jobs-dot/Dancer_dot.png',
   },
   {
     id: 'blm',
@@ -113,24 +65,16 @@ const jobs = [
     jpIcon: '/jobs-kanji/BlackMage_jp.png',
     dotIcon: '/jobs-dot/BlackMage_dot.png',
   },
-  {
-    id: 'smn',
-    name: 'Summoner',
-    jpIcon: '/jobs-kanji/Summoner_jp.png',
-    dotIcon: '/jobs-dot/Summoner_dot.png',
-  },
-  {
-    id: 'rdm',
-    name: 'Red Mage',
-    jpIcon: '/jobs-kanji/RedMage_jp.png',
-    dotIcon: '/jobs-dot/RedMage_dot.png',
-  },
-  {
-    id: 'pct',
-    name: 'Pictomancer',
-    jpIcon: '/jobs-kanji/Pictomancer_jp.png',
-    dotIcon: '/jobs-dot/Pictomancer_dot.png',
-  },
+]
+
+const fonts = [
+  'Arial',
+  'Verdana',
+  'Trebuchet MS',
+  'Georgia',
+  'Times New Roman',
+  'Impact',
+  'Comic Sans MS',
 ]
 
 export default function NameplatePage() {
@@ -148,6 +92,71 @@ export default function NameplatePage() {
 
   const [iconType, setIconType] =
     useState<'jp' | 'dot'>('jp')
+
+  // =========================
+  // 名前設定
+  // =========================
+
+  const [nameColor, setNameColor] =
+    useState('#ffffff')
+
+  const [nameOutline, setNameOutline] =
+    useState('#000000')
+
+  const [nameGlow, setNameGlow] =
+    useState(true)
+
+  const [
+    nameOutlineEnabled,
+    setNameOutlineEnabled,
+  ] = useState(true)
+
+  const [nameFont, setNameFont] =
+    useState('Arial')
+
+  // =========================
+  // ジョブ設定
+  // =========================
+
+  const [jobColor, setJobColor] =
+    useState('#facc15')
+
+  const [jobOutline, setJobOutline] =
+    useState('#000000')
+
+  const [jobGlow, setJobGlow] =
+    useState(true)
+
+  const [
+    jobOutlineEnabled,
+    setJobOutlineEnabled,
+  ] = useState(true)
+
+  const [jobFont, setJobFont] =
+    useState('Georgia')
+
+  // =========================
+  // サーバー設定
+  // =========================
+
+  const [serverColor, setServerColor] =
+    useState('#e5e7eb')
+
+  const [
+    serverOutline,
+    setServerOutline,
+  ] = useState('#000000')
+
+  const [serverGlow, setServerGlow] =
+    useState(true)
+
+  const [
+    serverOutlineEnabled,
+    setServerOutlineEnabled,
+  ] = useState(true)
+
+  const [serverFont, setServerFont] =
+    useState('Verdana')
 
   const selectedJob =
     jobs.find(
@@ -177,10 +186,43 @@ export default function NameplatePage() {
     link.click()
   }
 
+  // =========================
+  // シャドウ生成
+  // =========================
+
+  const createShadow = (
+    outline: string,
+    glow: boolean,
+    outlineEnabled: boolean
+  ) => {
+
+    if (!outlineEnabled) {
+
+      return glow
+        ? `
+          0 0 10px ${outline},
+          0 0 20px ${outline}
+        `
+        : 'none'
+    }
+
+    return glow
+      ? `
+          0 0 10px ${outline},
+          0 0 20px ${outline},
+          3px 3px 0 ${outline},
+          -3px -3px 0 ${outline}
+        `
+      : `
+          3px 3px 0 ${outline},
+          -3px -3px 0 ${outline}
+        `
+  }
+
   return (
     <main className="min-h-screen bg-zinc-900 text-white p-8 flex flex-col items-center gap-8">
 
-      <div className="w-full max-w-4xl">
+      <div className="w-full max-w-5xl">
 
         <a
           href="/"
@@ -200,15 +242,16 @@ export default function NameplatePage() {
         </a>
 
         <h1 className="text-4xl font-black mb-8">
-          FF14 Nameplate Generator
+          FF14 Advanced Nameplate Generator
         </h1>
 
-        <div className="bg-zinc-800 rounded-2xl p-6 space-y-6">
+        <div className="bg-zinc-800 rounded-2xl p-6 space-y-8">
 
-          <div>
-            <p className="font-bold mb-2">
-              プレイヤーネーム
-            </p>
+          {/* =========================
+              基本設定
+          ========================= */}
+
+          <div className="space-y-5">
 
             <input
               type="text"
@@ -218,6 +261,7 @@ export default function NameplatePage() {
                   e.target.value
                 )
               }
+              placeholder="Player Name"
               className="
                 w-full
                 bg-zinc-900
@@ -226,12 +270,6 @@ export default function NameplatePage() {
                 outline-none
               "
             />
-          </div>
-
-          <div>
-            <p className="font-bold mb-2">
-              サーバー名
-            </p>
 
             <input
               type="text"
@@ -241,6 +279,7 @@ export default function NameplatePage() {
                   e.target.value
                 )
               }
+              placeholder="Server Name"
               className="
                 w-full
                 bg-zinc-900
@@ -249,12 +288,6 @@ export default function NameplatePage() {
                 outline-none
               "
             />
-          </div>
-
-          <div>
-            <p className="font-bold mb-2">
-              ジョブ選択
-            </p>
 
             <select
               value={selectedJobId}
@@ -280,12 +313,6 @@ export default function NameplatePage() {
                 </option>
               ))}
             </select>
-          </div>
-
-          <div>
-            <p className="font-bold mb-2">
-              アイコンタイプ
-            </p>
 
             <select
               value={iconType}
@@ -313,7 +340,336 @@ export default function NameplatePage() {
                 ドットアイコン
               </option>
             </select>
+
           </div>
+
+          {/* =========================
+              プレイヤーネーム設定
+          ========================= */}
+
+          <div className="bg-zinc-900 rounded-xl p-5 space-y-4">
+
+            <h2 className="text-2xl font-bold">
+              プレイヤーネーム設定
+            </h2>
+
+            <div className="flex gap-4 flex-wrap">
+
+              <div>
+                <p className="mb-2">
+                  文字色
+                </p>
+
+                <input
+                  type="color"
+                  value={nameColor}
+                  onChange={(e) =>
+                    setNameColor(
+                      e.target.value
+                    )
+                  }
+                />
+              </div>
+
+              <div>
+                <p className="mb-2">
+                  縁取り色
+                </p>
+
+                <input
+                  type="color"
+                  value={nameOutline}
+                  onChange={(e) =>
+                    setNameOutline(
+                      e.target.value
+                    )
+                  }
+                />
+              </div>
+
+              <div>
+                <p className="mb-2">
+                  フォント
+                </p>
+
+                <select
+                  value={nameFont}
+                  onChange={(e) =>
+                    setNameFont(
+                      e.target.value
+                    )
+                  }
+                  className="
+                    bg-zinc-800
+                    p-2
+                    rounded
+                  "
+                >
+                  {fonts.map((font) => (
+                    <option
+                      key={font}
+                    >
+                      {font}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <label className="flex items-center gap-2">
+
+                <input
+                  type="checkbox"
+                  checked={nameGlow}
+                  onChange={() =>
+                    setNameGlow(
+                      !nameGlow
+                    )
+                  }
+                />
+
+                発光ON
+              </label>
+
+              <label className="flex items-center gap-2">
+
+                <input
+                  type="checkbox"
+                  checked={
+                    nameOutlineEnabled
+                  }
+                  onChange={() =>
+                    setNameOutlineEnabled(
+                      !nameOutlineEnabled
+                    )
+                  }
+                />
+
+                縁取りON
+              </label>
+
+            </div>
+
+          </div>
+
+          {/* =========================
+              ジョブ設定
+          ========================= */}
+
+          <div className="bg-zinc-900 rounded-xl p-5 space-y-4">
+
+            <h2 className="text-2xl font-bold">
+              ジョブ名設定
+            </h2>
+
+            <div className="flex gap-4 flex-wrap">
+
+              <div>
+                <p className="mb-2">
+                  文字色
+                </p>
+
+                <input
+                  type="color"
+                  value={jobColor}
+                  onChange={(e) =>
+                    setJobColor(
+                      e.target.value
+                    )
+                  }
+                />
+              </div>
+
+              <div>
+                <p className="mb-2">
+                  縁取り色
+                </p>
+
+                <input
+                  type="color"
+                  value={jobOutline}
+                  onChange={(e) =>
+                    setJobOutline(
+                      e.target.value
+                    )
+                  }
+                />
+              </div>
+
+              <div>
+                <p className="mb-2">
+                  フォント
+                </p>
+
+                <select
+                  value={jobFont}
+                  onChange={(e) =>
+                    setJobFont(
+                      e.target.value
+                    )
+                  }
+                  className="
+                    bg-zinc-800
+                    p-2
+                    rounded
+                  "
+                >
+                  {fonts.map((font) => (
+                    <option
+                      key={font}
+                    >
+                      {font}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <label className="flex items-center gap-2">
+
+                <input
+                  type="checkbox"
+                  checked={jobGlow}
+                  onChange={() =>
+                    setJobGlow(
+                      !jobGlow
+                    )
+                  }
+                />
+
+                発光ON
+              </label>
+
+              <label className="flex items-center gap-2">
+
+                <input
+                  type="checkbox"
+                  checked={
+                    jobOutlineEnabled
+                  }
+                  onChange={() =>
+                    setJobOutlineEnabled(
+                      !jobOutlineEnabled
+                    )
+                  }
+                />
+
+                縁取りON
+              </label>
+
+            </div>
+
+          </div>
+
+          {/* =========================
+              サーバー設定
+          ========================= */}
+
+          <div className="bg-zinc-900 rounded-xl p-5 space-y-4">
+
+            <h2 className="text-2xl font-bold">
+              サーバー名設定
+            </h2>
+
+            <div className="flex gap-4 flex-wrap">
+
+              <div>
+                <p className="mb-2">
+                  文字色
+                </p>
+
+                <input
+                  type="color"
+                  value={serverColor}
+                  onChange={(e) =>
+                    setServerColor(
+                      e.target.value
+                    )
+                  }
+                />
+              </div>
+
+              <div>
+                <p className="mb-2">
+                  縁取り色
+                </p>
+
+                <input
+                  type="color"
+                  value={serverOutline}
+                  onChange={(e) =>
+                    setServerOutline(
+                      e.target.value
+                    )
+                  }
+                />
+              </div>
+
+              <div>
+                <p className="mb-2">
+                  フォント
+                </p>
+
+                <select
+                  value={serverFont}
+                  onChange={(e) =>
+                    setServerFont(
+                      e.target.value
+                    )
+                  }
+                  className="
+                    bg-zinc-800
+                    p-2
+                    rounded
+                  "
+                >
+                  {fonts.map((font) => (
+                    <option
+                      key={font}
+                    >
+                      {font}
+                    </option>
+                  ))}
+                </select>
+              </div>
+
+              <label className="flex items-center gap-2">
+
+                <input
+                  type="checkbox"
+                  checked={serverGlow}
+                  onChange={() =>
+                    setServerGlow(
+                      !serverGlow
+                    )
+                  }
+                />
+
+                発光ON
+              </label>
+
+              <label className="flex items-center gap-2">
+
+                <input
+                  type="checkbox"
+                  checked={
+                    serverOutlineEnabled
+                  }
+                  onChange={() =>
+                    setServerOutlineEnabled(
+                      !serverOutlineEnabled
+                    )
+                  }
+                />
+
+                縁取りON
+              </label>
+
+            </div>
+
+          </div>
+
+          {/* =========================
+              PNG生成
+          ========================= */}
 
           <button
             onClick={generateImage}
@@ -334,11 +690,11 @@ export default function NameplatePage() {
         </div>
       </div>
 
-      <div className="w-full max-w-6xl">
-
-        <p className="font-bold mb-4 text-zinc-400">
+      {/* =========================
           プレビュー
-        </p>
+      ========================= */}
+
+      <div className="w-full max-w-7xl">
 
         <div
           ref={captureRef}
@@ -352,6 +708,7 @@ export default function NameplatePage() {
         >
 
           {/* アイコン */}
+
           <div
             className="
               h-[220px]
@@ -375,7 +732,10 @@ export default function NameplatePage() {
           </div>
 
           {/* テキスト */}
+
           <div className="flex flex-col justify-center">
+
+            {/* プレイヤー名 */}
 
             <div
               className="
@@ -384,52 +744,63 @@ export default function NameplatePage() {
                 leading-none
               "
               style={{
+                color: nameColor,
+                fontFamily:
+                  nameFont,
                 textShadow:
-                  `
-                  0 0 10px black,
-                  0 0 20px black,
-                  3px 3px 0 black
-                  `,
+                  createShadow(
+                    nameOutline,
+                    nameGlow,
+                    nameOutlineEnabled
+                  ),
               }}
             >
               {playerName}
             </div>
 
+            {/* ジョブ名 */}
+
             <div
               className="
                 text-[54px]
                 font-black
-                text-yellow-400
                 leading-none
                 mt-2
               "
               style={{
+                color: jobColor,
+                fontFamily:
+                  jobFont,
                 textShadow:
-                  `
-                  0 0 10px black,
-                  0 0 20px black,
-                  2px 2px 0 black
-                  `,
+                  createShadow(
+                    jobOutline,
+                    jobGlow,
+                    jobOutlineEnabled
+                  ),
               }}
             >
               {selectedJob.name}
             </div>
 
+            {/* サーバー名 */}
+
             <div
               className="
                 text-[44px]
                 font-bold
-                text-zinc-200
                 leading-none
                 mt-3
               "
               style={{
+                color: serverColor,
+                fontFamily:
+                  serverFont,
                 textShadow:
-                  `
-                  0 0 10px black,
-                  0 0 20px black,
-                  2px 2px 0 black
-                  `,
+                  createShadow(
+                    serverOutline,
+                    serverGlow,
+                    serverOutlineEnabled
+                  ),
               }}
             >
               {serverName}

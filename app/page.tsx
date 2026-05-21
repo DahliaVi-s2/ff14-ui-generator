@@ -22,53 +22,77 @@ export default function HomePage() {
 
         <div className="flex flex-wrap justify-center gap-4 mt-12">
 
-          <Link
-            href="/generator"
-            className="
-              bg-blue-500
-              hover:bg-blue-400
-              px-10
-              py-5
-              rounded-2xl
-              font-bold
-              text-xl
-              transition
-            "
-          >
-            ジョブレベル生成
-          </Link>
+          <a
+  href="/card"
+  className="
+    inline-block
+    bg-purple-600
+    hover:bg-purple-500
+    transition
+    px-6
+    py-4
+    rounded-2xl
+    font-bold
+    text-lg
+    shadow-lg
+  "
+>
+  キャラクターカード生成
+</a>
 
-          <Link
-            href="/nameplate"
-            className="
-              bg-purple-500
-              hover:bg-purple-400
-              px-10
-              py-5
-              rounded-2xl
-              font-bold
-              text-xl
-              transition
-            "
-          >
-            ネームプレート生成
-          </Link>
+<a
+  href="/generator"
+  className="
+    inline-block
+    bg-blue-600
+    hover:bg-blue-500
+    transition
+    px-6
+    py-4
+    rounded-2xl
+    font-bold
+    text-lg
+    shadow-lg
+  "
+>
+  ジョブレベル生成
+</a>
 
-          <Link
-            href="/howto"
-            className="
-              bg-zinc-700
-              hover:bg-zinc-600
-              px-10
-              py-5
-              rounded-2xl
-              font-bold
-              text-xl
-              transition
-            "
-          >
-            使い方を見る
-          </Link>
+<a
+  href="/nameplate"
+  className="
+    inline-block
+    bg-emerald-600
+    hover:bg-emerald-500
+    transition
+    px-6
+    py-4
+    rounded-2xl
+    font-bold
+    text-lg
+    shadow-lg
+  "
+>
+  ネームプレート生成
+</a>
+
+<a
+  href="/howto"
+  className="
+    inline-block
+    bg-zinc-700
+    hover:bg-zinc-600
+    transition
+    px-6
+    py-4
+    rounded-2xl
+    font-bold
+    text-lg
+    shadow-lg
+  "
+>
+  使い方
+</a>
 
         </div>
 

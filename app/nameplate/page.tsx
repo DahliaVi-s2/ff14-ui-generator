@@ -78,6 +78,7 @@ const fonts = [
 ]
 
 export default function NameplatePage() {
+
   const captureRef =
     useRef<HTMLDivElement>(null)
 
@@ -92,6 +93,16 @@ export default function NameplatePage() {
 
   const [iconType, setIconType] =
     useState<'jp' | 'dot'>('jp')
+
+  // =========================
+  // アイコンカラー
+  // =========================
+
+  const [iconColor, setIconColor] =
+    useState('#ffffff')
+
+  const [iconGlow, setIconGlow] =
+    useState(true)
 
   // =========================
   // 名前設定
@@ -164,7 +175,12 @@ export default function NameplatePage() {
         job.id === selectedJobId
     ) || jobs[0]
 
+  // =========================
+  // PNG生成
+  // =========================
+
   const generateImage = async () => {
+
     if (!captureRef.current) return
 
     const dataUrl = await toPng(
@@ -340,6 +356,53 @@ export default function NameplatePage() {
                 ドットアイコン
               </option>
             </select>
+
+          </div>
+
+          {/* =========================
+              アイコン設定
+          ========================= */}
+
+          <div className="bg-zinc-900 rounded-xl p-5 space-y-4">
+
+            <h2 className="text-2xl font-bold">
+              アイコン設定
+            </h2>
+
+            <div className="flex gap-6 flex-wrap">
+
+              <div>
+                <p className="mb-2">
+                  アイコン色
+                </p>
+
+                <input
+                  type="color"
+                  value={iconColor}
+                  onChange={(e) =>
+                    setIconColor(
+                      e.target.value
+                    )
+                  }
+                />
+              </div>
+
+              <label className="flex items-center gap-2">
+
+                <input
+                  type="checkbox"
+                  checked={iconGlow}
+                  onChange={() =>
+                    setIconGlow(
+                      !iconGlow
+                    )
+                  }
+                />
+
+                発光ON
+              </label>
+
+            </div>
 
           </div>
 
@@ -707,31 +770,79 @@ export default function NameplatePage() {
           "
         >
 
-          {/* アイコン */}
+          {/* =========================
+              アイコン
+          ========================= */}
 
           <div
             className="
               h-[220px]
+              w-[220px]
               flex
               items-center
               justify-center
             "
           >
-            <Image
-              src={
-                iconType === 'jp'
-                  ? selectedJob.jpIcon
-                  : selectedJob.dotIcon
-              }
-              alt={selectedJob.name}
-              width={220}
-              height={220}
-              className="object-contain"
-              unoptimized
-            />
+
+            {iconType === 'jp' ? (
+
+              <div
+                className="w-full h-full"
+                style={{
+                  backgroundColor:
+                    iconColor,
+
+                  WebkitMaskImage:
+                    `url(${selectedJob.jpIcon})`,
+
+                  maskImage:
+                    `url(${selectedJob.jpIcon})`,
+
+                  WebkitMaskRepeat:
+                    'no-repeat',
+
+                  maskRepeat:
+                    'no-repeat',
+
+                  WebkitMaskPosition:
+                    'center',
+
+                  maskPosition:
+                    'center',
+
+                  WebkitMaskSize:
+                    'contain',
+
+                  maskSize:
+                    'contain',
+
+                  filter: iconGlow
+                    ? `
+                      drop-shadow(0 0 8px ${iconColor})
+                      drop-shadow(0 0 16px ${iconColor})
+                    `
+                    : 'none',
+                }}
+              />
+
+            ) : (
+
+              <Image
+                src={selectedJob.dotIcon}
+                alt={selectedJob.name}
+                width={220}
+                height={220}
+                className="object-contain"
+                unoptimized
+              />
+
+            )}
+
           </div>
 
-          {/* テキスト */}
+          {/* =========================
+              テキスト
+          ========================= */}
 
           <div className="flex flex-col justify-center">
 

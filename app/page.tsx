@@ -12,10 +12,12 @@ export default function HomePage() {
         </h1>
 
         <p className="text-zinc-300 text-2xl leading-relaxed max-w-4xl mx-auto">
-          FF14のジョブレベル透過画像を
+          FF14のジョブレベル画像や
+          ネームプレート透過PNGを
           無料で生成できるWebツールです。
           <br />
-          SNS投稿、プロフィール画像共有などに利用できます。
+          OBS配信、SNS投稿、プロフィール画像、
+          FC募集、コミュニティ共有などに利用できます。
         </p>
 
         <div className="flex flex-wrap justify-center gap-4 mt-12">
@@ -33,7 +35,23 @@ export default function HomePage() {
               transition
             "
           >
-            ジェネレーターを使う
+            ジョブレベル生成
+          </Link>
+
+          <Link
+            href="/nameplate"
+            className="
+              bg-purple-500
+              hover:bg-purple-400
+              px-10
+              py-5
+              rounded-2xl
+              font-bold
+              text-xl
+              transition
+            "
+          >
+            ネームプレート生成
           </Link>
 
           <Link
@@ -69,7 +87,9 @@ export default function HomePage() {
 
             <p>
               FF14 Job Level Generator は、
-              FINAL FANTASY XIV のジョブレベル画像を
+              FINAL FANTASY XIV の
+              ジョブレベル画像や
+              ネームプレートを
               簡単に作成できる無料Webツールです。
             </p>
 
@@ -80,14 +100,15 @@ export default function HomePage() {
             </p>
 
             <p>
-              ジョブ別表示、
-              ロール別表示、
-              非表示設定など、
-              柔軟なカスタマイズが可能です。
+              ドット絵アイコン、
+              日本語一文字アイコンなど、
+              複数のデザイン切り替えにも対応しています。
             </p>
 
             <p>
-              作成した画像は背景透過PNGとして保存でき、SNS投稿など幅広く利用できます。
+              作成した画像は背景透過PNGとして保存でき、
+              OBS配信、SNS投稿、
+              FC募集画像など幅広く利用できます。
             </p>
 
           </div>
@@ -108,12 +129,13 @@ export default function HomePage() {
           <div className="bg-zinc-800 rounded-2xl p-8">
 
             <h3 className="text-2xl font-bold mb-4">
-              透過PNG生成
+              ジョブレベル生成
             </h3>
 
             <p className="text-zinc-300 leading-relaxed">
-              背景透過PNGをワンクリックで生成。
-              プロフィール画像作成やキャラクターカード作成にご利用いただけます。
+              FF14の全ジョブに対応した
+              レベル表示透過PNGを
+              ワンクリックで生成できます。
             </p>
 
           </div>
@@ -121,13 +143,14 @@ export default function HomePage() {
           <div className="bg-zinc-800 rounded-2xl p-8">
 
             <h3 className="text-2xl font-bold mb-4">
-              ロール別表示
+              ネームプレート生成
             </h3>
 
             <p className="text-zinc-300 leading-relaxed">
-              TANK、HEALER、DPS、
-              CRAFTER、GATHERERなど、
-              カテゴリ別出力に対応しています。
+              プレイヤーネーム、
+              ジョブアイコン、
+              データセンター情報付きの
+              FF14風ネームプレートを生成できます。
             </p>
 
           </div>
@@ -135,12 +158,12 @@ export default function HomePage() {
           <div className="bg-zinc-800 rounded-2xl p-8">
 
             <h3 className="text-2xl font-bold mb-4">
-              非表示機能
+              透過PNG対応
             </h3>
 
             <p className="text-zinc-300 leading-relaxed">
-              不要なジョブを非表示にし、
-              必要なジョブのみ画像化できます。
+              背景透過PNGとして保存できるため、
+              OBS配信や動画編集にも最適です。
             </p>
 
           </div>
@@ -235,6 +258,10 @@ export default function HomePage() {
 
           <Link href="/generator">
             Generator
+          </Link>
+
+          <Link href="/nameplate">
+            Nameplate
           </Link>
 
           <Link href="/about">

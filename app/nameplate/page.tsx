@@ -5,76 +5,198 @@ import { toPng } from 'html-to-image'
 import Image from 'next/image'
 
 const jobs = [
+
+  // Tanks
+
   {
     id: 'pld',
     name: 'Paladin',
     jpIcon: '/jobs-kanji/Paladin_jp.png',
     dotIcon: '/jobs-dot/Paladin_dot.png',
   },
+
   {
     id: 'war',
     name: 'Warrior',
     jpIcon: '/jobs-kanji/Warrior_jp.png',
     dotIcon: '/jobs-dot/Warrior_dot.png',
   },
+
   {
     id: 'drk',
     name: 'Dark Knight',
     jpIcon: '/jobs-kanji/DarkKnight_jp.png',
     dotIcon: '/jobs-dot/DarkKnight_dot.png',
   },
+
   {
     id: 'gnb',
     name: 'Gunbreaker',
     jpIcon: '/jobs-kanji/Gunbreaker_jp.png',
     dotIcon: '/jobs-dot/Gunbreaker_dot.png',
   },
+
+  // Healers
+
   {
     id: 'whm',
     name: 'White Mage',
     jpIcon: '/jobs-kanji/WhiteMage_jp.png',
     dotIcon: '/jobs-dot/WhiteMage_dot.png',
   },
+
   {
     id: 'sch',
     name: 'Scholar',
     jpIcon: '/jobs-kanji/Scholar_jp.png',
     dotIcon: '/jobs-dot/Scholar_dot.png',
   },
+
   {
     id: 'ast',
     name: 'Astrologian',
     jpIcon: '/jobs-kanji/Astrologian_jp.png',
     dotIcon: '/jobs-dot/Astrologian_dot.png',
   },
+
   {
     id: 'sge',
     name: 'Sage',
     jpIcon: '/jobs-kanji/Sage_jp.png',
     dotIcon: '/jobs-dot/Sage_dot.png',
   },
+
+  // Melee DPS
+
+  {
+    id: 'mnk',
+    name: 'Monk',
+    jpIcon: '/jobs-kanji/Monk_jp.png',
+    dotIcon: '/jobs-dot/Monk_dot.png',
+  },
+
+  {
+    id: 'drg',
+    name: 'Dragoon',
+    jpIcon: '/jobs-kanji/Dragoon_jp.png',
+    dotIcon: '/jobs-dot/Dragoon_dot.png',
+  },
+
+  {
+    id: 'nin',
+    name: 'Ninja',
+    jpIcon: '/jobs-kanji/Ninja_jp.png',
+    dotIcon: '/jobs-dot/Ninja_dot.png',
+  },
+
   {
     id: 'sam',
     name: 'Samurai',
     jpIcon: '/jobs-kanji/Samurai_jp.png',
     dotIcon: '/jobs-dot/Samurai_dot.png',
   },
+
+  {
+    id: 'rpr',
+    name: 'Reaper',
+    jpIcon: '/jobs-kanji/Reaper_jp.png',
+    dotIcon: '/jobs-dot/Reaper_dot.png',
+  },
+
+  {
+    id: 'vpr',
+    name: 'Viper',
+    jpIcon: '/jobs-kanji/Viper_jp.png',
+    dotIcon: '/jobs-dot/Viper_dot.png',
+  },
+
+  // Physical Ranged DPS
+
+  {
+    id: 'brd',
+    name: 'Bard',
+    jpIcon: '/jobs-kanji/Bard_jp.png',
+    dotIcon: '/jobs-dot/Bard_dot.png',
+  },
+
+  {
+    id: 'mch',
+    name: 'Machinist',
+    jpIcon: '/jobs-kanji/Machinist_jp.png',
+    dotIcon: '/jobs-dot/Machinist_dot.png',
+  },
+
+  {
+    id: 'dnc',
+    name: 'Dancer',
+    jpIcon: '/jobs-kanji/Dancer_jp.png',
+    dotIcon: '/jobs-dot/Dancer_dot.png',
+  },
+
+  // Magical Ranged DPS
+
   {
     id: 'blm',
     name: 'Black Mage',
     jpIcon: '/jobs-kanji/BlackMage_jp.png',
     dotIcon: '/jobs-dot/BlackMage_dot.png',
   },
+
+  {
+    id: 'smn',
+    name: 'Summoner',
+    jpIcon: '/jobs-kanji/Summoner_jp.png',
+    dotIcon: '/jobs-dot/Summoner_dot.png',
+  },
+
+  {
+    id: 'rdm',
+    name: 'Red Mage',
+    jpIcon: '/jobs-kanji/RedMage_jp.png',
+    dotIcon: '/jobs-dot/RedMage_dot.png',
+  },
+
+  {
+    id: 'pct',
+    name: 'Pictomancer',
+    jpIcon: '/jobs-kanji/Pictomancer_jp.png',
+    dotIcon: '/jobs-dot/Pictomancer_dot.png',
+  },
+
 ]
 
 const fonts = [
+
+  // Standard
+
   'Arial',
   'Verdana',
   'Trebuchet MS',
   'Georgia',
   'Times New Roman',
   'Impact',
+
+  // Elegant
+
+  'Palatino',
+  'Garamond',
+  'Bookman',
+
+  // Cute
+
   'Comic Sans MS',
+  'Courier New',
+
+  // Stylish
+
+  'Brush Script MT',
+  'Lucida Handwriting',
+  'Segoe Script',
+
+  // Fantasy
+
+  'Papyrus',
+
 ]
 
 export default function NameplatePage() {

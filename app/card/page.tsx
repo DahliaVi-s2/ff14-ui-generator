@@ -1496,7 +1496,6 @@ export default function CardEditorPage() {
 
           </div>
         </div>
-      </div>
-    </main>
+      </main>
   )
 }

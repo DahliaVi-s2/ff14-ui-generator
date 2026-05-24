@@ -1,108 +1,62 @@
 'use client'
 
-import { useRef, useState } from 'react'
-import { Rnd } from 'react-rnd'
-import { toPng } from 'html-to-image'
 import Image from 'next/image'
+import { toPng } from 'html-to-image'
+import { Rnd } from 'react-rnd'
+import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
+import {
+  ChangeEvent,
+  useMemo,
+  useRef,
+  useState,
+  useEffect,
+} from 'react'
+
+/* =========================================================
+   TYPES
+========================================================= */
 
 interface LayerItem {
   id: string
-
-  type: 'image' | 'text'
-
+  type: 'image' | 'text' | 'shape'
   name: string
-
   src?: string
-
   text?: string
-
   fontFamily?: string
-
   textColor?: string
-
   strokeEnabled?: boolean
-
   strokeColor?: string
-
   glowEnabled?: boolean
-
   glowColor?: string
-
   fontSize?: number
-
+  shapeColor?: string
+  borderRadius?: number
   x: number
   y: number
-
   width: number
   height: number
-
   rotation: number
-
   opacity: number
-
-  zIndex: number
-
   visible: boolean
-
   locked: boolean
-
+  zIndex: number
   isBackground?: boolean
 }
 
+/* =========================================================
+   DATA
+========================================================= */
+
 const sizeTemplates = [
-  {
-    name: 'X Header',
-    width: 1500,
-    height: 500,
-  },
-
-  {
-    name: 'X Post Landscape',
-    width: 1600,
-    height: 900,
-  },
-
-  {
-    name: 'X Post Portrait',
-    width: 1080,
-    height: 1350,
-  },
-
-  {
-    name: 'X Square',
-    width: 1080,
-    height: 1080,
-  },
-
-  {
-    name: 'YouTube Thumbnail',
-    width: 1280,
-    height: 720,
-  },
-
-  {
-    name: 'Smartphone Wallpaper',
-    width: 1080,
-    height: 1920,
-  },
-
-  {
-    name: 'Desktop Wallpaper',
-    width: 1920,
-    height: 1080,
-  },
-
-  {
-    name: 'FHD',
-    width: 1920,
-    height: 1080,
-  },
-
-  {
-    name: '4K',
-    width: 3840,
-    height: 2160,
-  },
+  { name: 'X Header', width: 1500, height: 500 },
+  { name: 'X Post Landscape', width: 1600, height: 900 },
+  { name: 'X Post Portrait', width: 1080, height: 1350 },
+  { name: 'X Square', width: 1080, height: 1080 },
+  { name: 'YouTube Thumbnail', width: 1280, height: 720 },
+  { name: 'Smartphone Wallpaper', width: 1080, height: 1920 },
+  { name: 'Desktop Wallpaper', width: 1920, height: 1080 },
+  { name: 'FHD', width: 1920, height: 1080 },
+  { name: '4K', width: 3840, height: 2160 },
 ]
 
 const fonts = [
@@ -120,1382 +74,736 @@ const fonts = [
   'sans-serif',
 ]
 
+/* =========================================================
+   LAYER CONTENT
+========================================================= */
+
+function LayerContent({
+  layer,
+}: {
+  layer: LayerItem
+}) {
+  if (!layer) return null
+
+  return (
+    <div
+      className="w-full h-full relative"
+      style={{
+        transform: `rotate(${layer.rotation ?? 0}deg)`,
+        transformOrigin: 'center',
+      }}
+    >
+      {layer.type === 'image' && (
+        <Image
+          src={layer.src || ''}
+          alt=""
+          fill
+          unoptimized
+          draggable={false}
+          className="
+            pointer-events-none
+            select-none
+            object-contain
+          "
+        />
+      )}
+
+      {layer.type === 'text' && (
+        <div
+          className="
+            w-full
+            h-full
+            flex
+            items-center
+            justify-center
+            text-center
+            whitespace-pre-wrap
+            break-words
+            leading-none
+            pointer-events-none
+            select-none
+          "
+          style={{
+            fontFamily: layer.fontFamily,
+            color: layer.textColor,
+            fontSize: `${layer.fontSize}px`,
+            WebkitTextStroke: layer.strokeEnabled
+              ? `3px ${layer.strokeColor}`
+              : '0px transparent',
+            textShadow: layer.glowEnabled
+              ? `0 0 15px ${layer.glowColor},
+                 0 0 30px ${layer.glowColor}`
+              : 'none',
+          }}
+        >
+          {layer.text}
+        </div>
+      )}
+
+      {layer.type === 'shape' && (
+        <div
+          className="w-full h-full pointer-events-none select-none"
+          style={{
+            backgroundColor: layer.shapeColor || '#000000',
+            borderRadius: `${layer.borderRadius || 0}px`,
+          }}
+        />
+      )}
+    </div>
+  )
+}
+
+/* =========================================================
+   MAIN
+========================================================= */
+
 export default function CardEditorPage() {
-  const captureRef =
-    useRef<HTMLDivElement>(null)
+  const captureRef = useRef<HTMLDivElement>(null)
+  const bgInputRef = useRef<HTMLInputElement>(null)
+  const layerInputRef = useRef<HTMLInputElement>(null)
 
-  const [canvasWidth, setCanvasWidth] =
-    useState(1600)
+  const [canvasWidth, setCanvasWidth] = useState(1080)
+  const [canvasHeight, setCanvasHeight] = useState(1350)
+  const [previewScale, setPreviewScale] = useState(0.55)
+  const [showGrid, setShowGrid] = useState(true)
+  const [gridOpacity, setGridOpacity] = useState(0.4)
+  const [gridColor, setGridColor] = useState('#ffffff')
+  
+  const [layers, setLayers] = useState<LayerItem[]>([])
+  const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null)
 
-  const [canvasHeight, setCanvasHeight] =
-    useState(900)
+  /* =========================================================
+     外側クリックによる選択解除のグローバル制御
+  ========================================================= */
+  useEffect(() => {
+    const handleGlobalClick = (e: MouseEvent) => {
+      const target = e.target as HTMLElement
+      if (!target) return
 
-  const [previewScale, setPreviewScale] =
-    useState(0.45)
+      if (
+        target.closest('.react-draggable') || 
+        target.closest('[class*="rnd"]') ||
+        target.classList.contains('react-draggable')
+      ) {
+        return
+      }
 
-  const [showGrid, setShowGrid] =
-    useState(true)
+      if (
+        target.closest('button') ||
+        target.closest('input') ||
+        target.closest('textarea') ||
+        target.closest('select') ||
+        target.closest('.cursor-pointer') ||
+        target.closest('[data-rfd-drag-handle-id]') ||
+        target.closest('label')
+      ) {
+        return
+      }
 
-  const [layers, setLayers] =
-    useState<LayerItem[]>([])
+      setSelectedLayerId(null)
+    }
 
-  const [selectedLayerIds, setSelectedLayerIds] =
-    useState<string[]>([])
+    window.addEventListener('mousedown', handleGlobalClick)
+    return () => {
+      window.removeEventListener('mousedown', handleGlobalClick)
+    }
+  }, [])
 
-  // =========================
-  // テンプレ
-  // =========================
+  /* =========================================================
+     MEMO (レイヤーのソート順)
+  ========================================================= */
 
-  const applyTemplate = (
-    width: number,
-    height: number
-  ) => {
-    setCanvasWidth(width)
-    setCanvasHeight(height)
+  const sortedLayers = useMemo(() => {
+    const safeLayers = layers || []
+    return [...safeLayers].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0))
+  }, [layers])
+
+  const listOrderedLayers = useMemo(() => {
+    const safeLayers = layers || []
+    return [...safeLayers].sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0))
+  }, [layers])
+
+  const selectedLayer = useMemo(() => {
+    return (layers || []).find((l) => l.id === selectedLayerId) || null
+  }, [layers, selectedLayerId])
+
+  const hexToRgbaStr = (hex: string, alpha: number) => {
+    if (!hex || hex.length < 7) return `rgba(255, 255, 255, ${alpha})`
+    const r = parseInt(hex.slice(1, 3), 16)
+    const g = parseInt(hex.slice(3, 5), 16)
+    const b = parseInt(hex.slice(5, 7), 16)
+    return `rgba(${r}, ${g}, ${b}, ${alpha})`
   }
 
-  // =========================
-  // 更新
-  // =========================
+  /* =========================================================
+     UPDATE & DRAG SORT
+  ========================================================= */
 
   const updateLayer = (
     id: string,
     updates: Partial<LayerItem>
   ) => {
     setLayers((prev) =>
-      prev.map((layer) =>
-        layer.id === id
-          ? {
-              ...layer,
-              ...updates,
-            }
-          : layer
+      (prev || []).map((layer) =>
+        layer.id === id ? { ...layer, ...updates } : layer
       )
     )
   }
 
-  // =========================
-  // 背景アップロード
-  // =========================
-
-  const handleBackgroundUpload = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = e.target.files?.[0]
-
-    if (!file) return
-
-    const reader = new FileReader()
-
-    reader.onloadend = () => {
-      const img =
-        new window.Image()
-
-      img.onload = () => {
-        const ratio = Math.min(
-          canvasWidth / img.width,
-          canvasHeight / img.height
-        )
-
-        const width =
-          img.width * ratio
-
-        const height =
-          img.height * ratio
-
-        const backgroundLayer: LayerItem = {
-          id: crypto.randomUUID(),
-
-          type: 'image',
-
-          name: '背景',
-
-          src: reader.result as string,
-
-          x:
-            (canvasWidth - width) / 2,
-
-          y:
-            (canvasHeight - height) / 2,
-
-          width,
-          height,
-
-          rotation: 0,
-
-          opacity: 1,
-
-          zIndex: 0,
-
-          visible: true,
-
-          locked: false,
-
-          isBackground: true,
-        }
-
-        setLayers((prev) => [
-          backgroundLayer,
-          ...prev.filter(
-            (l) => !l.isBackground
-          ),
-        ])
-      }
-
-      img.src =
-        reader.result as string
+  const removeLayer = (id: string) => {
+    setLayers((prev) => (prev || []).filter((l) => l.id !== id))
+    if (selectedLayerId === id) {
+      setSelectedLayerId(null)
     }
-
-    reader.readAsDataURL(file)
   }
 
-  // =========================
-  // 画像レイヤー追加
-  // =========================
+  const handleDragEnd = (result: DropResult) => {
+    if (!result.destination) return
 
-  const handleAddLayer = (
-    e: React.ChangeEvent<HTMLInputElement>
-  ) => {
-    const file = e.target.files?.[0]
+    const sourceIndex = result.source.index
+    const destIndex = result.destination.index
+    if (sourceIndex === destIndex) return
 
-    if (!file) return
+    const reordered = [...listOrderedLayers]
+    const [moved] = reordered.splice(sourceIndex, 1)
+    reordered.splice(destIndex, 0, moved)
 
-    const reader = new FileReader()
+    const updated = reordered.map((layer, index) => ({
+      ...layer,
+      zIndex: reordered.length - index,
+    }))
 
-    reader.onloadend = () => {
-      const img =
-        new window.Image()
-
-      img.onload = () => {
-        const maxSize = 600
-
-        let width =
-          img.width
-
-        let height =
-          img.height
-
-        if (
-          width > maxSize
-        ) {
-          const ratio =
-            maxSize / width
-
-          width =
-            maxSize
-
-          height =
-            height * ratio
-        }
-
-        if (
-          height > maxSize
-        ) {
-          const ratio =
-            maxSize / height
-
-          height =
-            maxSize
-
-          width =
-            width * ratio
-        }
-
-        const newLayer: LayerItem = {
-          id: crypto.randomUUID(),
-
-          type: 'image',
-
-          name: file.name,
-
-          src: reader.result as string,
-
-          x: 200,
-          y: 200,
-
-          width,
-          height,
-
-          rotation: 0,
-
-          opacity: 1,
-
-          zIndex:
-            layers.length + 1,
-
-          visible: true,
-
-          locked: false,
-        }
-
-        setLayers((prev) => [
-          ...prev,
-          newLayer,
-        ])
-      }
-
-      img.src =
-        reader.result as string
-    }
-
-    reader.readAsDataURL(file)
+    const finalLayers = updated.map(l => l.isBackground ? { ...l, zIndex: 0 } : l)
+    setLayers(finalLayers)
   }
 
-  // =========================
-  // テキスト追加
-  // =========================
+  /* =========================================================
+     TEMPLATE
+  ========================================================= */
+
+  const applyTemplate = (width: number, height: number) => {
+    setCanvasWidth(width)
+    setCanvasHeight(height)
+  }
+
+  const handleTemplateChange = (e: ChangeEvent<HTMLSelectElement>) => {
+    const selectedName = e.target.value
+    if (!selectedName) return
+    const template = sizeTemplates.find((t) => t.name === selectedName)
+    if (template) {
+      applyTemplate(template.width, template.height)
+    }
+  }
+
+  /* =========================================================
+     IMAGE LOAD
+  ========================================================= */
+
+  const loadImage = (
+    file: File
+  ): Promise<{ src: string; width: number; height: number }> => {
+    return new Promise((resolve) => {
+      const reader = new FileReader()
+      reader.onloadend = () => {
+        const img = new window.Image()
+        img.onload = () => {
+          resolve({ src: reader.result as string, width: img.width, height: img.height })
+        }
+        img.src = reader.result as string
+      }
+      reader.readAsDataURL(file)
+    })
+  }
+
+  /* =========================================================
+     ADD LAYERS
+  ========================================================= */
+
+  const handleBackgroundUpload = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const img = await loadImage(file)
+    const ratio = Math.max(canvasWidth / img.width, canvasHeight / img.height)
+    const width = img.width * ratio
+    const height = img.height * ratio
+
+    const backgroundLayer: LayerItem = {
+      id: crypto.randomUUID(),
+      type: 'image',
+      name: '背景',
+      src: img.src,
+      x: (canvasWidth - width) / 2,
+      y: (canvasHeight - height) / 2,
+      width,
+      height,
+      rotation: 0,
+      opacity: 1,
+      visible: true,
+      locked: false,
+      zIndex: 0,
+      isBackground: true,
+    }
+
+    setLayers((prev) => {
+      const safePrev = prev || []
+      const withoutBackground = safePrev.filter((l) => !l.isBackground)
+      return [backgroundLayer, ...withoutBackground]
+    })
+    setSelectedLayerId(backgroundLayer.id)
+    e.target.value = ''
+  }
+
+  const handleAddLayer = async (e: ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    const img = await loadImage(file)
+    const maxSize = 600
+    let width = img.width
+    let height = img.height
+
+    if (width > maxSize) {
+      const ratio = maxSize / width
+      width *= ratio
+      height *= ratio
+    }
+    if (height > maxSize) {
+      const ratio = maxSize / height
+      width *= ratio
+      height *= ratio
+    }
+
+    const newLayer: LayerItem = {
+      id: crypto.randomUUID(),
+      type: 'image',
+      name: file.name,
+      src: img.src,
+      x: 200,
+      y: 200,
+      width,
+      height,
+      rotation: 0,
+      opacity: 1,
+      visible: true,
+      locked: false,
+      zIndex: (layers || []).length + 1,
+    }
+
+    setLayers((prev) => [...(prev || []), newLayer])
+    setSelectedLayerId(newLayer.id)
+    e.target.value = ''
+  }
 
   const addTextLayer = () => {
     const newLayer: LayerItem = {
       id: crypto.randomUUID(),
-
       type: 'text',
-
       name: 'テキスト',
-
       text: 'NEW TEXT',
-
       fontFamily: 'Arial',
-
       textColor: '#ffffff',
-
       strokeEnabled: true,
-
       strokeColor: '#000000',
-
       glowEnabled: false,
-
       glowColor: '#ffffff',
-
       fontSize: 72,
-
-      x: 300,
-      y: 300,
-
+      x: 250,
+      y: 250,
       width: 600,
       height: 150,
-
       rotation: 0,
-
       opacity: 1,
-
-      zIndex:
-        layers.length + 1,
-
       visible: true,
-
       locked: false,
+      zIndex: (layers || []).length + 1,
     }
 
-    setLayers((prev) => [
-      ...prev,
-      newLayer,
-    ])
+    setLayers((prev) => [...(prev || []), newLayer])
+    setSelectedLayerId(newLayer.id)
   }
 
-  // =========================
-  // 表示切替
-  // =========================
+  const addShapeLayer = () => {
+    const newLayer: LayerItem = {
+      id: crypto.randomUUID(),
+      type: 'shape',
+      name: '四角形図形',
+      shapeColor: '#000000',
+      borderRadius: 16,
+      x: 300,
+      y: 400,
+      width: 400,
+      height: 200,
+      rotation: 0,
+      opacity: 0.5,
+      visible: true,
+      locked: false,
+      zIndex: (layers || []).length + 1,
+    }
 
-  const toggleVisibility = (
-    id: string
-  ) => {
-    setLayers((prev) =>
-      prev.map((layer) =>
-        layer.id === id
-          ? {
-              ...layer,
-              visible:
-                !layer.visible,
-            }
-          : layer
-      )
-    )
+    setLayers((prev) => [...(prev || []), newLayer])
+    setSelectedLayerId(newLayer.id)
   }
 
-  // =========================
-  // ロック
-  // =========================
-
-  const toggleLock = (
-    id: string
-  ) => {
-    setLayers((prev) =>
-      prev.map((layer) =>
-        layer.id === id
-          ? {
-              ...layer,
-              locked:
-                !layer.locked,
-            }
-          : layer
-      )
-    )
-  }
-
-  // =========================
-  // 選択
-  // =========================
-
-  const toggleLayerSelection = (
-    id: string
-  ) => {
-    setSelectedLayerIds((prev) => {
-      if (prev.includes(id)) {
-        return prev.filter(
-          (item) => item !== id
-        )
-      }
-
-      return [...prev, id]
-    })
-  }
-
-  // =========================
-  // PNG
-  // =========================
+  /* =========================================================
+     EXPORT
+  ========================================================= */
 
   const generateImage = async () => {
     if (!captureRef.current) return
 
-    const dataUrl = await toPng(
-      captureRef.current,
-      {
-        cacheBust: true,
-        pixelRatio: 2,
-      }
-    )
+    const dataUrl = await toPng(captureRef.current, {
+      cacheBust: true,
+      pixelRatio: 2,
+      filter: (node) => {
+        if (node instanceof HTMLElement && node.id === 'grid-overlay') {
+          return false
+        }
+        return true
+      },
+      style: {
+        overflow: 'hidden',
+        borderRadius: '30px',
+      },
+    })
 
-    const link =
-      document.createElement('a')
-
-    link.download =
-      'ff14-character-card.png'
-
+    const link = document.createElement('a')
+    link.download = 'ff14-card.png'
     link.href = dataUrl
-
     link.click()
   }
 
+  /* =========================================================
+     JSX
+  ========================================================= */
+
+  const currentTemplateName = sizeTemplates.find(
+    (t) => t.width === canvasWidth && t.height === canvasHeight
+  )?.name || ''
+
   return (
-    <main
-      className="
-      min-h-screen
-      bg-zinc-950
-      text-white
-      p-4
-      xl:p-6
-    "
-    >
-      <div
-        className="
-        max-w-[1800px]
-        mx-auto
-      "
-      >
-        <a
-          href="/"
-          className="
-            inline-block
-            mb-6
-            bg-zinc-800
-            hover:bg-zinc-700
-            px-5
-            py-3
-            rounded-xl
-            font-bold
-          "
-        >
-          ← トップへ戻る
-        </a>
+    <main className="min-h-screen bg-black text-white p-5">
+      <div className="max-w-[2200px] mx-auto">
+        <h1 className="text-5xl font-black mb-6">FF14 Character Card Studio</h1>
 
-        <h1
-          className="
-          text-4xl
-          font-black
-          mb-6
-        "
-        >
-          FF14 Character Card Studio
-        </h1>
+        <div className="grid grid-cols-[340px_340px_1fr] gap-6">
 
-        <div
-          className="
-          grid
-          grid-cols-1
-          xl:grid-cols-[340px_1fr]
-          gap-6
-        "
-        >
-          {/* 左UI */}
-
-          <div
-            className="
-            space-y-5
-          "
-          >
-            {/* サイズ */}
-
-            <div
-              className="
-              bg-zinc-900
-              rounded-2xl
-              p-5
-              space-y-5
-            "
-            >
-              <h2
-                className="
-                text-2xl
-                font-bold
-              "
-              >
-                キャンバスサイズ
-              </h2>
-
-              <div
-                className="
-                grid
-                grid-cols-2
-                gap-2
-              "
-              >
-                {sizeTemplates.map(
-                  (template) => (
-                    <button
-                      key={template.name}
-                      onClick={() =>
-                        applyTemplate(
-                          template.width,
-                          template.height
-                        )
-                      }
-                      className="
-                        bg-zinc-800
-                        hover:bg-zinc-700
-                        rounded-xl
-                        p-3
-                        text-xs
-                        font-bold
-                      "
-                    >
-                      {template.name}
-                    </button>
-                  )
-                )}
+          {/* LEFT PANEL */}
+          <div className="space-y-5">
+            {/* SIZE */}
+            <div className="bg-zinc-900 rounded-3xl p-5 space-y-5">
+              <h2 className="text-3xl font-black">キャンバスサイズ</h2>
+              <div className="space-y-2">
+                <p className="text-sm font-bold text-zinc-400">テンプレートから選択</p>
+                <select
+                  value={currentTemplateName}
+                  onChange={handleTemplateChange}
+                  className="w-full bg-zinc-800 border border-zinc-700 rounded-2xl p-3 font-bold text-white focus:outline-none focus:border-cyan-500"
+                >
+                  <option value="">-- カスタムサイズ --</option>
+                  {sizeTemplates.map((template) => (
+                    <option key={template.name} value={template.name}>
+                      {template.name} ({template.width} × {template.height})
+                    </option>
+                  ))}
+                </select>
               </div>
 
-              <div>
-                <div
-                  className="
-                  flex
-                  justify-between
-                  mb-2
-                "
-                >
-                  <p>横幅</p>
-
-                  <input
-                    type="number"
-                    value={canvasWidth}
-                    onChange={(e) =>
-                      setCanvasWidth(
-                        Number(
-                          e.target.value
-                        )
-                      )
-                    }
-                    className="
-                      w-28
-                      bg-zinc-800
-                      rounded-lg
-                      px-3
-                      py-2
-                    "
-                  />
+              <div className="space-y-5 border-t border-zinc-800 pt-3">
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <p className="font-bold">横幅</p>
+                    <input
+                      type="number"
+                      value={canvasWidth}
+                      onChange={(e) => setCanvasWidth(Number(e.target.value))}
+                      className="w-28 bg-zinc-800 rounded-xl px-3 py-2"
+                    />
+                  </div>
+                  <input type="range" min="300" max="5000" value={canvasWidth} onChange={(e) => setCanvasWidth(Number(e.target.value))} className="w-full" />
                 </div>
 
-                <input
-                  type="range"
-                  min="300"
-                  max="5000"
-                  value={canvasWidth}
-                  onChange={(e) =>
-                    setCanvasWidth(
-                      Number(
-                        e.target.value
-                      )
-                    )
-                  }
-                  className="
-                    w-full
-                  "
-                />
-              </div>
-
-              <div>
-                <div
-                  className="
-                  flex
-                  justify-between
-                  mb-2
-                "
-                >
-                  <p>高さ</p>
-
-                  <input
-                    type="number"
-                    value={canvasHeight}
-                    onChange={(e) =>
-                      setCanvasHeight(
-                        Number(
-                          e.target.value
-                        )
-                      )
-                    }
-                    className="
-                      w-28
-                      bg-zinc-800
-                      rounded-lg
-                      px-3
-                      py-2
-                    "
-                  />
+                <div>
+                  <div className="flex justify-between mb-2">
+                    <p className="font-bold">高さ</p>
+                    <input
+                      type="number"
+                      value={canvasHeight}
+                      onChange={(e) => setCanvasHeight(Number(e.target.value))}
+                      className="w-28 bg-zinc-800 rounded-xl px-3 py-2"
+                    />
+                  </div>
+                  <input type="range" min="300" max="5000" value={canvasHeight} onChange={(e) => setCanvasHeight(Number(e.target.value))} className="w-full" />
                 </div>
-
-                <input
-                  type="range"
-                  min="300"
-                  max="5000"
-                  value={canvasHeight}
-                  onChange={(e) =>
-                    setCanvasHeight(
-                      Number(
-                        e.target.value
-                      )
-                    )
-                  }
-                  className="
-                    w-full
-                  "
-                />
               </div>
             </div>
 
-            {/* 背景 */}
-
-            <div
-              className="
-              bg-zinc-900
-              rounded-2xl
-              p-5
-            "
-            >
-              <h2
-                className="
-                text-2xl
-                font-bold
-                mb-4
-              "
-              >
-                背景画像
-              </h2>
-
-              <input
-                type="file"
-                accept="image/*"
-                onChange={
-                  handleBackgroundUpload
-                }
-              />
-            </div>
-
-            {/* レイヤー */}
-
-            <div
-              className="
-              bg-zinc-900
-              rounded-2xl
-              p-5
-              space-y-4
-            "
-            >
-              <h2
-                className="
-                text-2xl
-                font-bold
-              "
-              >
-                レイヤー追加
-              </h2>
-
-              <input
-                type="file"
-                accept="image/*"
-                onChange={handleAddLayer}
-              />
-
-              <button
-                onClick={addTextLayer}
-                className="
-                  w-full
-                  bg-cyan-600
-                  hover:bg-cyan-500
-                  rounded-xl
-                  p-3
-                  font-bold
-                "
-              >
-                テキスト追加
+            {/* BG */}
+            <div className="bg-zinc-900 rounded-3xl p-5">
+              <h2 className="text-3xl font-black mb-4">背景画像</h2>
+              <input type="file" accept="image/*" ref={bgInputRef} onChange={handleBackgroundUpload} className="hidden" />
+              <button onClick={() => bgInputRef.current?.click()} className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-2xl p-4 font-black transition-colors">
+                背景画像を設定する
               </button>
             </div>
 
-            {/* グリッド */}
+            {/* ADD */}
+            <div className="bg-zinc-900 rounded-3xl p-5 space-y-4">
+              <h2 className="text-3xl font-black">レイヤー追加</h2>
+              <input type="file" accept="image/*" ref={layerInputRef} onChange={handleAddLayer} className="hidden" />
+              <button onClick={() => layerInputRef.current?.click()} className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-2xl p-4 font-black transition-colors">
+                画像をアップロード
+              </button>
+              
+              <button onClick={addTextLayer} className="w-full bg-cyan-600 hover:bg-cyan-500 rounded-2xl p-4 font-black transition-colors">
+                テキスト追加
+              </button>
 
-            <div
-              className="
-              bg-zinc-900
-              rounded-2xl
-              p-5
-            "
-            >
-              <label
-                className="
-                flex
-                items-center
-                gap-3
-              "
-              >
-                <input
-                  type="checkbox"
-                  checked={showGrid}
-                  onChange={(e) =>
-                    setShowGrid(
-                      e.target.checked
-                    )
-                  }
-                />
+              <button onClick={addShapeLayer} className="w-full bg-emerald-600 hover:bg-emerald-500 rounded-2xl p-4 font-black transition-colors">
+                図形（背景座布団）追加
+              </button>
+            </div>
 
+            {/* GRID */}
+            <div className="bg-zinc-900 rounded-3xl p-5 space-y-4">
+              <label className="flex items-center gap-3 font-bold cursor-pointer">
+                <input type="checkbox" checked={showGrid} onChange={(e) => setShowGrid(e.target.checked)} />
                 グリッド表示
               </label>
-            </div>
 
-            {/* レイヤー管理 */}
-
-            <div
-              className="
-              bg-zinc-900
-              rounded-2xl
-              p-5
-              space-y-4
-            "
-            >
-              <h2
-                className="
-                text-2xl
-                font-bold
-              "
-              >
-                レイヤー管理
-              </h2>
-
-              <div
-                className="
-                space-y-3
-                max-h-[700px]
-                overflow-auto
-              "
-              >
-                {[...layers]
-                  .sort(
-                    (a, b) =>
-                      b.zIndex - a.zIndex
-                  )
-                  .map((layer) => (
-                    <div
-                      key={layer.id}
-                      onClick={() =>
-                        toggleLayerSelection(
-                          layer.id
-                        )
-                      }
-                      className={`
-                        p-4
-                        rounded-xl
-                        border-2
-                        transition
-
-                        ${
-                          selectedLayerIds.includes(
-                            layer.id
-                          )
-                            ? `
-                              border-cyan-400
-                              bg-cyan-500/10
-                            `
-                            : `
-                              border-transparent
-                              bg-zinc-800
-                            `
-                        }
-                      `}
-                    >
-                      <div
-                        className="
-                        flex
-                        items-center
-                        gap-2
-                        mb-3
-                      "
-                      >
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-
-                            toggleVisibility(
-                              layer.id
-                            )
-                          }}
-                        >
-                          {
-                            layer.visible
-                              ? '👁'
-                              : '🚫'
-                          }
-                        </button>
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-
-                            toggleLock(
-                              layer.id
-                            )
-                          }}
-                        >
-                          {
-                            layer.locked
-                              ? '🔒'
-                              : '🔓'
-                          }
-                        </button>
-
-                        <button
-                          onClick={(e) => {
-                            e.stopPropagation()
-
-                            setLayers((prev) =>
-                              prev.filter(
-                                (item) =>
-                                  item.id !==
-                                  layer.id
-                              )
-                            )
-
-                            setSelectedLayerIds(
-                              (prev) =>
-                                prev.filter(
-                                  (id) =>
-                                    id !==
-                                    layer.id
-                                )
-                            )
-                          }}
-                          className="
-                            text-red-400
-                            hover:text-red-300
-                          "
-                        >
-                          🗑
-                        </button>
-
-                        <input
-                          type="text"
-                          value={layer.name}
-                          onChange={(e) =>
-                            updateLayer(
-                              layer.id,
-                              {
-                                name:
-                                  e.target.value,
-                              }
-                            )
-                          }
-                          className="
-                            flex-1
-                            bg-zinc-700
-                            rounded-lg
-                            px-3
-                            py-2
-                          "
-                        />
-                      </div>
-
-                      {layer.type ===
-                        'text' && (
-                        <div
-                          className="
-                          space-y-3
-                        "
-                        >
-                          <textarea
-                            value={layer.text}
-                            onChange={(e) =>
-                              updateLayer(
-                                layer.id,
-                                {
-                                  text:
-                                    e.target
-                                      .value,
-                                }
-                              )
-                            }
-                            className="
-                              w-full
-                              bg-zinc-700
-                              rounded-lg
-                              p-3
-                            "
-                          />
-
-                          <select
-                            value={
-                              layer.fontFamily
-                            }
-                            onChange={(e) =>
-                              updateLayer(
-                                layer.id,
-                                {
-                                  fontFamily:
-                                    e.target
-                                      .value,
-                                }
-                              )
-                            }
-                            className="
-                              w-full
-                              bg-zinc-700
-                              rounded-lg
-                              p-3
-                            "
-                          >
-                            {fonts.map(
-                              (font) => (
-                                <option
-                                  key={font}
-                                  value={font}
-                                >
-                                  {font}
-                                </option>
-                              )
-                            )}
-                          </select>
-
-                          <div
-                            className="
-                            flex
-                            gap-2
-                          "
-                          >
-                            <input
-                              type="color"
-                              value={
-                                layer.textColor
-                              }
-                              onChange={(e) =>
-                                updateLayer(
-                                  layer.id,
-                                  {
-                                    textColor:
-                                      e.target
-                                        .value,
-                                  }
-                                )
-                              }
-                            />
-
-                            <input
-                              type="color"
-                              value={
-                                layer.strokeColor
-                              }
-                              onChange={(e) =>
-                                updateLayer(
-                                  layer.id,
-                                  {
-                                    strokeColor:
-                                      e.target
-                                        .value,
-                                  }
-                                )
-                              }
-                            />
-
-                            <input
-                              type="color"
-                              value={
-                                layer.glowColor
-                              }
-                              onChange={(e) =>
-                                updateLayer(
-                                  layer.id,
-                                  {
-                                    glowColor:
-                                      e.target
-                                        .value,
-                                  }
-                                )
-                              }
-                            />
-                          </div>
-
-                          <div
-                            className="
-                            flex
-                            gap-4
-                            text-sm
-                          "
-                          >
-                            <label
-                              className="
-                              flex
-                              items-center
-                              gap-2
-                            "
-                            >
-                              <input
-                                type="checkbox"
-                                checked={
-                                  layer.strokeEnabled
-                                }
-                                onChange={(
-                                  e
-                                ) =>
-                                  updateLayer(
-                                    layer.id,
-                                    {
-                                      strokeEnabled:
-                                        e.target
-                                          .checked,
-                                    }
-                                  )
-                                }
-                              />
-
-                              枠
-                            </label>
-
-                            <label
-                              className="
-                              flex
-                              items-center
-                              gap-2
-                            "
-                            >
-                              <input
-                                type="checkbox"
-                                checked={
-                                  layer.glowEnabled
-                                }
-                                onChange={(
-                                  e
-                                ) =>
-                                  updateLayer(
-                                    layer.id,
-                                    {
-                                      glowEnabled:
-                                        e.target
-                                          .checked,
-                                    }
-                                  )
-                                }
-                              />
-
-                              発光
-                            </label>
-                          </div>
-
-                          <div>
-                            <p
-                              className="
-                              mb-1
-                              text-sm
-                            "
-                            >
-                              フォントサイズ
-                            </p>
-
-                            <input
-                              type="range"
-                              min="20"
-                              max="200"
-                              value={
-                                layer.fontSize
-                              }
-                              onChange={(e) =>
-                                updateLayer(
-                                  layer.id,
-                                  {
-                                    fontSize:
-                                      Number(
-                                        e
-                                          .target
-                                          .value
-                                      ),
-                                  }
-                                )
-                              }
-                              className="
-                                w-full
-                              "
-                            />
-                          </div>
-                        </div>
-                      )}
-
-                      <div
-                        className="
-                        mt-4
-                      "
-                      >
-                        <p
-                          className="
-                          text-sm
-                          mb-1
-                        "
-                        >
-                          回転
-                        </p>
-
-                        <input
-                          type="range"
-                          min="-180"
-                          max="180"
-                          value={
-                            layer.rotation
-                          }
-                          onChange={(e) =>
-                            updateLayer(
-                              layer.id,
-                              {
-                                rotation:
-                                  Number(
-                                    e.target
-                                      .value
-                                  ),
-                              }
-                            )
-                          }
-                          className="
-                            w-full
-                          "
-                        />
-                      </div>
+              {showGrid && (
+                <div className="space-y-4 border-t border-zinc-800 pt-3">
+                  <div className="flex justify-between items-center text-sm font-bold text-zinc-400">
+                    <span>グリッドのカラー</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xs font-mono uppercase">{gridColor}</span>
+                      <input type="color" value={gridColor} onChange={(e) => setGridColor(e.target.value)} className="w-8 h-8 rounded-lg border-0 cursor-pointer bg-transparent" />
                     </div>
-                  ))}
-              </div>
+                  </div>
+
+                  <div className="space-y-2">
+                    <div className="flex justify-between text-sm font-bold text-zinc-400">
+                      <span>グリッドの濃さ</span>
+                      <span>{Math.round(gridOpacity * 100)}%</span>
+                    </div>
+                    <input type="range" min="0.05" max="1" step="0.01" value={gridOpacity} onChange={(e) => setGridOpacity(Number(e.target.value))} className="w-full accent-cyan-500" />
+                  </div>
+                </div>
+              )}
             </div>
 
-            <button
-              onClick={generateImage}
-              className="
-                w-full
-                bg-purple-600
-                hover:bg-purple-500
-                p-4
-                rounded-2xl
-                text-xl
-                font-black
-              "
-            >
+            {/* EXPORT */}
+            <button onClick={generateImage} className="w-full bg-purple-600 hover:bg-purple-500 rounded-3xl p-5 text-2xl font-black transition-colors">
               PNG生成
             </button>
           </div>
 
-          {/* 右 */}
+          {/* LAYER PANEL */}
+          <div className="bg-zinc-900 rounded-3xl p-5 space-y-5">
+            <h2 className="text-4xl font-black">レイヤー</h2>
+            
+            <DragDropContext onDragEnd={handleDragEnd}>
+              <Droppable droppableId="layers-list">
+                {(provided) => (
+                  <div
+                    {...provided.droppableProps}
+                    ref={provided.innerRef}
+                    className="space-y-3 max-h-[400px] overflow-auto pr-1"
+                  >
+                    {listOrderedLayers.map((layer, index) => (
+                      <Draggable key={layer.id} draggableId={layer.id} index={index}>
+                        {(dragProvided, snapshot) => (
+                          <div
+                            ref={dragProvided.innerRef}
+                            {...dragProvided.draggableProps}
+                            onClick={() => setSelectedLayerId(layer.id)}
+                            className={`rounded-2xl border p-4 cursor-pointer transition-all ${
+                              selectedLayerId === layer.id
+                                ? 'border-cyan-400 bg-cyan-950/40 shadow-[0_0_15px_rgba(34,211,238,0.2)]'
+                                : 'border-zinc-700 bg-zinc-800 hover:border-zinc-600'
+                            } ${snapshot.isDragging ? 'opacity-75 scale-[0.98] border-dashed border-cyan-500' : ''}`}
+                          >
+                            <div className="flex justify-between items-start gap-3">
+                              <div {...dragProvided.dragHandleProps} className="text-zinc-500 hover:text-zinc-300 px-1 py-2 cursor-grab active:cursor-grabbing text-lg select-none">
+                                ☰
+                              </div>
 
-          <div
-            className="
-              overflow-auto
-              bg-zinc-900
-              rounded-2xl
-              p-4
-            "
-          >
-            <div
-              className="
-              flex
-              items-center
-              gap-4
-              mb-4
-            "
-            >
-              <p
-                className="
-                font-bold
-              "
-              >
-                プレビュー倍率
-              </p>
+                              <div className="flex-1 min-w-0">
+                                <p className="font-black truncate text-sm">{layer.name}</p>
+                                <p className="text-[10px] uppercase font-bold text-zinc-500 tracking-wider mt-0.5">{layer.type}</p>
+                              </div>
 
-              <input
-                type="range"
-                min="0.1"
-                max="1"
-                step="0.01"
-                value={previewScale}
-                onChange={(e) =>
-                  setPreviewScale(
-                    Number(e.target.value)
-                  )
-                }
-                className="
-                  w-full
-                "
-              />
-            </div>
+                              <div className="flex gap-1.5 self-center">
+                                <button type="button" onClick={(e) => { e.stopPropagation(); updateLayer(layer.id, { visible: !layer.visible }) }} className="px-2 py-1 bg-zinc-700 hover:bg-zinc-600 rounded text-[11px] font-bold">
+                                  {layer.visible ? '表示' : '隠す'}
+                                </button>
+                                <button type="button" onClick={(e) => { e.stopPropagation(); updateLayer(layer.id, { locked: !layer.locked }) }} className="px-2 py-1 bg-zinc-700 hover:bg-zinc-600 rounded text-[11px] font-bold">
+                                  {layer.locked ? '解' : '鍵'}
+                                </button>
+                                <button type="button" onClick={(e) => { e.stopPropagation(); removeLayer(layer.id) }} className="px-2 py-1 bg-red-950/60 hover:bg-red-900 border border-red-800/40 rounded text-[11px] font-bold text-red-400">
+                                  消
+                                </button>
+                              </div>
+                            </div>
+                          </div>
+                        )}
+                      </Draggable>
+                    ))}
+                    {provided.placeholder}
+                  </div>
+                )}
+              </Droppable>
+            </DragDropContext>
 
-            {/* プレビュー */}
-
-            <div className="flex justify-center overflow-visible">
-              <div
-                style={{
-                  width: `${canvasWidth * previewScale}px`,
-                  height: `${canvasHeight * previewScale}px`,
-                  overflow: 'visible',
-                  position: 'relative',
-                }}
-              >
-                <div
-                  style={{
-                    transform: `scale(${previewScale})`,
-                    transformOrigin:
-                      'top left',
-                    width: `${canvasWidth}px`,
-                    height: `${canvasHeight}px`,
-                    overflow: 'visible',
-                    position: 'relative',
-                  }}
-                >
-                  {/* 編集領域 */}
-<div
-  className="relative overflow-visible"
-  style={{
-    width: `${canvasWidth}px`,
-    height: `${canvasHeight}px`,
-  }}
->
-  {/* 実際の書き出しキャンバス */}
-  <div
-    ref={captureRef}
-    className="
-      relative
-      overflow-hidden
-      rounded-3xl
-      border-4
-      border-white/20
-      bg-zinc-900
-    "
-    style={{
-      width: `${canvasWidth}px`,
-      height: `${canvasHeight}px`,
-    }}
-  >
-    {/* グリッド */}
-    {showGrid && (
-      <div
-        className="
-          absolute
-          inset-0
-          pointer-events-none
-          opacity-30
-          z-[9999]
-        "
-        style={{
-          backgroundImage: `
-            linear-gradient(to right, rgba(255,255,255,0.18) 1px, transparent 1px),
-            linear-gradient(to bottom, rgba(255,255,255,0.18) 1px, transparent 1px)
-          `,
-          backgroundSize: '50px 50px',
-        }}
-      />
-    )}
-  </div>
-
-  {/* 編集用レイヤー */}
-  {layers
-    .sort((a, b) => a.zIndex - b.zIndex)
-    .map((layer) => {
-      const isSelected =
-        selectedLayerIds.includes(layer.id)
-
-      return (
-        <Rnd
-          key={layer.id}
-          scale={previewScale}
-          bounds={undefined}
-          disableDragging={
-            !isSelected || layer.locked
-          }
-          enableResizing={
-            isSelected && !layer.locked
-          }
-          size={{
-            width: layer.width,
-            height: layer.height,
-          }}
-          position={{
-            x: layer.x,
-            y: layer.y,
-          }}
-          onDragStop={(e, d) => {
-            updateLayer(layer.id, {
-              x: d.x,
-              y: d.y,
-            })
-          }}
-          onResizeStop={(
-            e,
-            direction,
-            ref,
-            delta,
-            position
-          ) => {
-            updateLayer(layer.id, {
-              width: parseInt(ref.style.width),
-              height: parseInt(ref.style.height),
-              x: position.x,
-              y: position.y,
-            })
-          }}
-          onMouseDown={(e) => {
-            if (!e.shiftKey) {
-              setSelectedLayerIds([layer.id])
-            } else {
-              toggleLayerSelection(layer.id)
-            }
-          }}
-          style={{
-            zIndex: layer.zIndex,
-            opacity: layer.visible ? 1 : 0,
-            pointerEvents: layer.visible
-              ? 'auto'
-              : 'none',
-            overflow: 'visible',
-          }}
-        >
-          {/* 表示用 */}
-          <div
-            className="relative w-full h-full"
-            style={{
-              transform: `rotate(${layer.rotation}deg)`,
-              opacity: layer.opacity,
-            }}
-          >
-            {/* 非選択時だけクリップ */}
-            <div
-              className={
-                isSelected
-                  ? 'overflow-visible w-full h-full'
-                  : 'overflow-hidden w-full h-full'
-              }
-            >
-              {layer.type === 'image' && (
-                <Image
-                  src={layer.src || ''}
-                  alt="layer"
-                  fill
-                  className="
-                    object-contain
-                    pointer-events-none
-                    select-none
-                  "
-                  unoptimized
-                />
-              )}
-
-              {layer.type === 'text' && (
-                <div
-                  className="
-                    w-full
-                    h-full
-                    flex
-                    items-center
-                    justify-center
-                    text-center
-                    break-words
-                    whitespace-pre-wrap
-                    leading-none
-                    pointer-events-none
-                    select-none
-                  "
-                  style={{
-                    fontFamily: layer.fontFamily,
-                    color: layer.textColor,
-                    fontSize: `${layer.fontSize}px`,
-                    WebkitTextStroke:
-                      layer.strokeEnabled
-                        ? `3px ${layer.strokeColor}`
-                        : '0px transparent',
-                    textShadow:
-                      layer.glowEnabled
-                        ? `0 0 15px ${layer.glowColor},
-                           0 0 30px ${layer.glowColor}`
-                        : 'none',
-                  }}
-                >
-                  {layer.text}
+            {/* EDIT */}
+            {selectedLayer && (
+              <div className="border-t border-zinc-700 pt-4 space-y-4 max-h-[400px] overflow-auto pr-1">
+                <h3 className="text-2xl font-black text-cyan-400">レイヤー編集</h3>
+                
+                {/* 【追加】サイズ数値入力欄 (横幅・高さ) */}
+                <div className="grid grid-cols-2 gap-3 bg-zinc-950/40 p-3 rounded-2xl border border-zinc-800">
+                  <div>
+                    <p className="mb-1 text-[11px] font-bold text-zinc-400">横幅 (W)</p>
+                    <div className="relative flex items-center">
+                      <input
+                        type="number"
+                        min="1"
+                        max="5000"
+                        value={Math.round(selectedLayer.width)}
+                        onChange={(e) => updateLayer(selectedLayer.id, { width: Number(e.target.value) || 1 })}
+                        className="w-full bg-zinc-800 rounded-xl px-2.5 py-1.5 text-sm text-white font-bold border border-zinc-700 focus:outline-none focus:border-cyan-500"
+                      />
+                      <span className="absolute right-2 text-[10px] text-zinc-500 font-bold">px</span>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="mb-1 text-[11px] font-bold text-zinc-400">高さ (H)</p>
+                    <div className="relative flex items-center">
+                      <input
+                        type="number"
+                        min="1"
+                        max="5000"
+                        value={Math.round(selectedLayer.height)}
+                        onChange={(e) => updateLayer(selectedLayer.id, { height: Number(e.target.value) || 1 })}
+                        className="w-full bg-zinc-800 rounded-xl px-2.5 py-1.5 text-sm text-white font-bold border border-zinc-700 focus:outline-none focus:border-cyan-500"
+                      />
+                      <span className="absolute right-2 text-[10px] text-zinc-500 font-bold">px</span>
+                    </div>
+                  </div>
                 </div>
-              )}
-            </div>
 
-            {/* 選択枠 */}
-            {isSelected && (
-              <div
-                className="
-                  absolute
-                  inset-0
-                  border-2
-                  border-cyan-400
-                  shadow-[0_0_25px_rgba(34,211,238,0.9)]
-                  pointer-events-none
-                  z-50
-                "
-              />
+                <div>
+                  <p className="mb-1 text-xs font-bold text-zinc-400">不透明度</p>
+                  <input type="range" min="0" max="1" step="0.01" value={selectedLayer.opacity} onChange={(e) => updateLayer(selectedLayer.id, { opacity: Number(e.target.value) })} className="w-full accent-cyan-500" />
+                </div>
+
+                <div>
+                  <p className="mb-1 text-xs font-bold text-zinc-400">回転角度</p>
+                  <input type="range" min="-180" max="180" value={selectedLayer.rotation} onChange={(e) => updateLayer(selectedLayer.id, { rotation: Number(e.target.value) })} className="w-full" />
+                </div>
+
+                {selectedLayer.type === 'shape' && (
+                  <>
+                    <div className="flex justify-between items-center text-xs font-bold text-zinc-400">
+                      <span>図形の色</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono uppercase text-[11px]">{selectedLayer.shapeColor}</span>
+                        <input type="color" value={selectedLayer.shapeColor || '#000000'} onChange={(e) => updateLayer(selectedLayer.id, { shapeColor: e.target.value })} className="w-8 h-8 rounded-lg border-0 cursor-pointer bg-transparent" />
+                      </div>
+                    </div>
+
+                    <div>
+                      <div className="flex justify-between text-xs font-bold text-zinc-400 mb-1">
+                        <span>角の丸み（角丸）</span>
+                        <span>{selectedLayer.borderRadius || 0}px</span>
+                      </div>
+                      <input type="range" min="0" max="150" step="1" value={selectedLayer.borderRadius || 0} onChange={(e) => updateLayer(selectedLayer.id, { borderRadius: Number(e.target.value) })} className="w-full accent-cyan-500" />
+                    </div>
+                  </>
+                )}
+
+                {selectedLayer.type === 'text' && (
+                  <>
+                    <textarea value={selectedLayer.text || ''} onChange={(e) => updateLayer(selectedLayer.id, { text: e.target.value })} className="w-full h-20 bg-zinc-800 rounded-2xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500" />
+                    <select value={selectedLayer.fontFamily} onChange={(e) => updateLayer(selectedLayer.id, { fontFamily: e.target.value })} className="w-full bg-zinc-800 rounded-2xl p-2.5 text-sm">
+                      {fonts.map((font) => <option key={font} value={font}>{font}</option>)}
+                    </select>
+                    <div>
+                      <p className="mb-1 text-xs font-bold text-zinc-400">文字サイズ</p>
+                      <input type="range" min="12" max="300" value={selectedLayer.fontSize} onChange={(e) => updateLayer(selectedLayer.id, { fontSize: Number(e.target.value) })} className="w-full" />
+                    </div>
+                  </>
+                )}
+              </div>
             )}
           </div>
-        </Rnd>
-      )
-    })}
-</div>
 
+          {/* CANVAS (PREVIEW) */}
+          <div className="bg-zinc-900 rounded-3xl p-5 overflow-auto">
+            <div className="flex items-center gap-4 mb-5">
+              <p className="font-black whitespace-nowrap">プレビュー倍率</p>
+              <input type="range" min="0.1" max="1" step="0.01" value={previewScale} onChange={(e) => setPreviewScale(Number(e.target.value))} className="w-full" />
+            </div>
+
+            <div className="flex justify-center items-start overflow-auto">
+              <div style={{ width: canvasWidth * previewScale, height: canvasHeight * previewScale }}>
+                <div style={{ width: canvasWidth, height: canvasHeight, transform: `scale(${previewScale})`, transformOrigin: 'top left' }}>
+                  <div ref={captureRef} className={`relative rounded-[30px] border border-white/20 bg-zinc-950 transition-all ${selectedLayerId ? 'overflow-visible' : 'overflow-hidden'}`} style={{ width: canvasWidth, height: canvasHeight }}>
+                    
+                    {/* LAYERS */}
+                    {sortedLayers.map((layer) => (
+                      <Rnd
+                        key={layer.id}
+                        disableDragging={layer.locked}
+                        enableResizing={!layer.locked}
+                        dragGrid={[1, 1]}
+                        resizeGrid={[1, 1]}
+                        position={{ x: layer.x, y: layer.y }}
+                        size={{ width: layer.width, height: layer.height }}
+                        onMouseDown={() => setSelectedLayerId(layer.id)}
+                        onDragStop={(e, d) => updateLayer(layer.id, { x: d.x, y: d.y })}
+                        onResizeStop={(e, dir, ref, delta, pos) => {
+                          updateLayer(layer.id, {
+                            width: parseFloat(ref.style.width),
+                            height: parseFloat(ref.style.height),
+                            x: pos.x,
+                            y: pos.y,
+                          })
+                        }}
+                        style={{ zIndex: layer.zIndex, opacity: layer.visible ? layer.opacity : 0 }}
+                      >
+                        <div className="relative w-full h-full">
+                          <LayerContent layer={layer} />
+                          {selectedLayerId === layer.id && (
+                            <div className="absolute inset-0 border-2 border-cyan-400 shadow-[0_0_25px_rgba(34,211,238,0.9)] pointer-events-none" />
+                          )}
+                        </div>
+                      </Rnd>
+                    ))}
+
+                    {/* GRID */}
                     {showGrid && (
                       <div
-                        className="
-                          absolute
-                          inset-0
-                          pointer-events-none
-                          opacity-30
-                          z-[9999]
-                        "
+                        id="grid-overlay"
+                        className="absolute inset-0 pointer-events-none z-[9999]"
                         style={{
                           backgroundImage: `
-                            linear-gradient(to right, rgba(255,255,255,0.18) 1px, transparent 1px),
-                            linear-gradient(to bottom, rgba(255,255,255,0.18) 1px, transparent 1px)
+                            linear-gradient(to right, ${hexToRgbaStr(gridColor, gridOpacity)} 1px, transparent 1px),
+                            linear-gradient(to bottom, ${hexToRgbaStr(gridColor, gridOpacity)} 1px, transparent 1px)
                           `,
-
-                          backgroundSize:
-                            '50px 50px',
+                          backgroundSize: '50px 50px',
                         }}
                       />
                     )}
+
                   </div>
                 </div>
               </div>
             </div>
-
           </div>
+
         </div>
-      </main>
+      </div>
+    </main>
   )
 }

@@ -13,9 +13,15 @@ import {
   useEffect,
 } from 'react'
 
-/* =========================================================
-   TYPES
-========================================================= */
+const jobNames = [
+  "Paladin", "Warrior", "DarkKnight", "Gunbreaker", "WhiteMage", "Scholar",
+  "Astrologian", "Sage", "Monk", "Dragoon", "Ninja", "Samurai", "Reaper",
+  "Viper", "Bard", "Machinist", "Dancer", "BlackMage", "Summoner", "RedMage",
+  "BlueMage", "Pictomancer",
+];
+
+const jobDotList = jobNames.map(name => ({ name, src: `/jobs-dot/${name}_dot.png` }));
+const jobKanjiList = jobNames.map(name => ({ name, src: `/jobs-kanji/${name}_jp.png` }));
 
 interface LayerItem {
   id: string
@@ -45,10 +51,6 @@ interface LayerItem {
   isBackground?: boolean
 }
 
-/* =========================================================
-   DATA
-========================================================= */
-
 const sizeTemplates = [
   { name: 'X Header', width: 1500, height: 500 },
   { name: 'X Post Landscape', width: 1600, height: 900 },
@@ -62,7 +64,6 @@ const sizeTemplates = [
 ]
 
 const fonts = [
-  // --- 日本語フォント ---
   { name: 'はちまるポップ', value: "'Hachi Maru Pop', sans-serif" },
   { name: 'デラゴシック (Dela Gothic One)', value: "'Dela Gothic One', sans-serif" },
   { name: 'ステッキ (Stecki)', value: "'Stecki', sans-serif" },
@@ -71,8 +72,6 @@ const fonts = [
   { name: 'M PLUS Rounded 1c (丸ゴシック)', value: "'M PLUS Rounded 1c', sans-serif" },
   { name: 'Noto Serif JP (美麗明朝)', value: "'Noto Serif JP', serif" },
   { name: 'Yomogi (手書き)', value: "'Yomogi', sans-serif" },
-
-  // --- 英語・装飾フォント ---
   { name: 'Walter Turncoat', value: "'Walter Turncoat', cursive" },
   { name: 'Rock Salt', value: "'Rock Salt', cursive" },
   { name: 'Bad Script', value: "'Bad Script', cursive" },
@@ -89,104 +88,61 @@ const fonts = [
   { name: 'Impact', value: 'Impact, sans-serif' },
 ]
 
-/* =========================================================
-   LAYER CONTENT
-========================================================= */
-
 function LayerContent({ layer }: { layer: LayerItem }) {
   if (!layer) return null
-
   return (
-    <div
-      className="w-full h-full relative"
-      style={{
-        transform: `rotate(${layer.rotation ?? 0}deg)`,
-        transformOrigin: 'center',
-      }}
-    >
+    <div className="w-full h-full relative" style={{ transform: `rotate(${layer.rotation ?? 0}deg)`, transformOrigin: 'center' }}>
       {layer.type === 'image' && (
-        <Image
-          src={layer.src || ''}
-          alt=""
-          fill
-          unoptimized
-          draggable={false}
-          className="pointer-events-none select-none object-contain"
-        />
-      )}
-
+  <div
+    style={{
+      width: '100%',
+      height: '100%',
+      // アイコン画像を「マスク（型）」として使用
+      WebkitMaskImage: `url(${layer.src})`,
+      maskImage: `url(${layer.src})`,
+      WebkitMaskSize: 'contain',
+      maskSize: 'contain',
+      WebkitMaskRepeat: 'no-repeat',
+      maskRepeat: 'no-repeat',
+      WebkitMaskPosition: 'center',
+      maskPosition: 'center',
+      // マスクされた部分をこの色で塗りつぶす
+      backgroundColor: layer.shapeColor || '#000000'
+    }}
+  />
+)}
       {layer.type === 'text' && (
-        <div
-          className="
-            w-full
-            h-full
-            flex
-            items-center
-            justify-center
-            text-center
-            whitespace-pre-wrap
-            break-words
-            leading-relaxed
-            pointer-events-none
-            select-none
-          "
-          style={{
-            fontFamily: layer.fontFamily,
-            color: layer.textColor,
-            fontSize: `${layer.fontSize}px`,
-            writingMode: layer.isVertical ? 'vertical-rl' : 'horizontal-tb',
-            WebkitWritingMode: layer.isVertical ? 'vertical-rl' : 'horizontal-tb',
-            WebkitTextStroke: layer.strokeEnabled
-              ? `3px ${layer.strokeColor || '#000000'}`
-              : '0px transparent',
-            textShadow: layer.glowEnabled
-              ? `0 0 12px ${layer.glowColor || '#ffffff'}, 0 0 24px ${layer.glowColor || '#ffffff'}`
-              : 'none',
-          }}
-        >
+        <div className="w-full h-full flex items-center justify-center text-center whitespace-pre-wrap break-words leading-relaxed pointer-events-none select-none"
+          style={{ fontFamily: layer.fontFamily, color: layer.textColor, fontSize: `${layer.fontSize}px`, writingMode: layer.isVertical ? 'vertical-rl' : 'horizontal-tb', WebkitWritingMode: layer.isVertical ? 'vertical-rl' : 'horizontal-tb', WebkitTextStroke: layer.strokeEnabled ? `3px ${layer.strokeColor || '#000000'}` : '0px transparent', textShadow: layer.glowEnabled ? `0 0 12px ${layer.glowColor || '#ffffff'}, 0 0 24px ${layer.glowColor || '#ffffff'}` : 'none' }}>
           {layer.text}
         </div>
       )}
-
-      {layer.type === 'shape' && (
-        <div
-          className="w-full h-full pointer-events-none select-none"
-          style={{
-            backgroundColor: layer.shapeColor || '#000000',
-            borderRadius: `${layer.borderRadius || 0}px`,
-          }}
-        />
-      )}
+      {layer.type === 'shape' && <div className="w-full h-full pointer-events-none select-none" style={{ backgroundColor: layer.shapeColor || '#000000', borderRadius: `${layer.borderRadius || 0}px` }} />}
     </div>
   )
 }
-
-/* =========================================================
-   MAIN
-========================================================= */
 
 export default function CardEditorPage() {
   const captureRef = useRef<HTMLDivElement>(null)
   const bgInputRef = useRef<HTMLInputElement>(null)
   const layerInputRef = useRef<HTMLInputElement>(null)
-
   const [canvasWidth, setCanvasWidth] = useState(1080)
   const [canvasHeight, setCanvasHeight] = useState(1350)
   const [previewScale, setPreviewScale] = useState(0.55)
   const [showGrid, setShowGrid] = useState(true)
   const [gridOpacity, setGridOpacity] = useState(0.4)
   const [gridColor, setGridColor] = useState('#ffffff')
-  
   const [layers, setLayers] = useState<LayerItem[]>([])
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null)
-
-  /* =========================================================
-     履歴管理 (戻る / 進む) の仕組み
-  ========================================================= */
-  const [history, setHistory] = useState<{ layers: LayerItem[]; canvasWidth: number; canvasHeight: number }[]>([
-    { layers: [], canvasWidth: 1080, canvasHeight: 1350 }
-  ])
+  const [kanjiColor, setKanjiColor] = useState('#ffffff');
+  const [history, setHistory] = useState<{ layers: LayerItem[]; canvasWidth: number; canvasHeight: number }[]>([{ layers: [], canvasWidth: 1080, canvasHeight: 1350 }])
   const [historyIndex, setHistoryIndex] = useState(0)
+
+  const handleColorChange = (color: string) => {
+    if (selectedLayerId) {
+      updateLayer(selectedLayerId, { shapeColor: color });
+    }
+  };
 
   const saveToHistory = (newLayers: LayerItem[], currentW = canvasWidth, currentH = canvasHeight) => {
     const cleanHistory = history.slice(0, historyIndex + 1)
@@ -217,286 +173,148 @@ export default function CardEditorPage() {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       const isCmdOrCtrl = e.metaKey || e.ctrlKey
-      if (isCmdOrCtrl && e.key.toLowerCase() === 'z') {
-        e.preventDefault()
-        if (e.shiftKey) {
-          handleRedo()
-        } else {
-          handleUndo()
-        }
-      }
-      if (isCmdOrCtrl && e.key.toLowerCase() === 'y') {
-        e.preventDefault()
-        handleRedo()
-      }
+      if (isCmdOrCtrl && e.key.toLowerCase() === 'z') { e.preventDefault(); e.shiftKey ? handleRedo() : handleUndo() }
+      if (isCmdOrCtrl && e.key.toLowerCase() === 'y') { e.preventDefault(); handleRedo() }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [historyIndex, history])
 
-
-  /* =========================================================
-     外側クリックによる選択解除の制御
-  ========================================================= */
   useEffect(() => {
     const handleGlobalClick = (e: MouseEvent) => {
       const target = e.target as HTMLElement
-      if (!target) return
-
-      if (
-        target.closest('.react-draggable') || 
-        target.closest('[class*="rnd"]') ||
-        target.classList.contains('react-draggable')
-      ) {
-        return
-      }
-
-      if (
-        target.closest('button') ||
-        target.closest('input') ||
-        target.closest('textarea') ||
-        target.closest('select') ||
-        target.closest('.cursor-pointer') ||
-        target.closest('[data-rfd-drag-handle-id]') ||
-        target.closest('label')
-      ) {
-        return
-      }
-
+      if (!target || target.closest('.react-draggable') || target.closest('[class*="rnd"]') || target.closest('button') || target.closest('input') || target.closest('select')) return
       setSelectedLayerId(null)
     }
-
     window.addEventListener('mousedown', handleGlobalClick)
-    return () => {
-      window.removeEventListener('mousedown', handleGlobalClick)
-    }
+    return () => window.removeEventListener('mousedown', handleGlobalClick)
   }, [])
 
-  /* =========================================================
-     MEMO (レイヤー順序)
-  ========================================================= */
-
-  const sortedLayers = useMemo(() => {
-    const safeLayers = layers || []
-    return [...safeLayers].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0))
-  }, [layers])
-
-  const listOrderedLayers = useMemo(() => {
-    const safeLayers = layers || []
-    return [...safeLayers].sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0))
-  }, [layers])
-
-  const selectedLayer = useMemo(() => {
-    return (layers || []).find((l) => l.id === selectedLayerId) || null
-  }, [layers, selectedLayerId])
+  const sortedLayers = useMemo(() => [...layers].sort((a, b) => (a.zIndex || 0) - (b.zIndex || 0)), [layers])
+  const listOrderedLayers = useMemo(() => [...layers].sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0)), [layers])
+  const selectedLayer = useMemo(() => layers.find((l) => l.id === selectedLayerId) || null, [layers, selectedLayerId])
 
   const hexToRgbaStr = (hex: string, alpha: number) => {
     if (!hex || hex.length < 7) return `rgba(255, 255, 255, ${alpha})`
-    const r = parseInt(hex.slice(1, 3), 16)
-    const g = parseInt(hex.slice(3, 5), 16)
-    const b = parseInt(hex.slice(5, 7), 16)
+    const r = parseInt(hex.slice(1, 3), 16), g = parseInt(hex.slice(3, 5), 16), b = parseInt(hex.slice(5, 7), 16)
     return `rgba(${r}, ${g}, ${b}, ${alpha})`
   }
 
-  /* =========================================================
-     UPDATE & DRAG SORT
-  ========================================================= */
-
   const updateLayer = (id: string, updates: Partial<LayerItem>, skipHistory = false) => {
     setLayers((prev) => {
-      const nextLayers = (prev || []).map((layer) =>
-        layer.id === id ? { ...layer, ...updates } : layer
-      )
-      if (!skipHistory) {
-        const cleanHistory = history.slice(0, historyIndex + 1)
-        setHistory([...cleanHistory, { layers: nextLayers, canvasWidth, canvasHeight }])
-        setHistoryIndex(cleanHistory.length)
-      }
+      const nextLayers = prev.map((l) => l.id === id ? { ...l, ...updates } : l)
+      if (!skipHistory) saveToHistory(nextLayers)
       return nextLayers
     })
   }
 
-  const removeLayer = (id: string) => {
-    const nextLayers = (layers || []).filter((l) => l.id !== id)
-    setLayers(nextLayers)
-    if (selectedLayerId === id) {
-      setSelectedLayerId(null)
+  const handleKanjiColorChange = (color: string) => {
+    setKanjiColor(color); // 全体設定用
+    if (selectedLayerId) {
+      updateLayer(selectedLayerId, { shapeColor: color }); // 選択中のレイヤーにも反映
     }
+  };
+
+  const removeLayer = (id: string) => {
+    const nextLayers = layers.filter((l) => l.id !== id)
+    setLayers(nextLayers)
+    if (selectedLayerId === id) setSelectedLayerId(null)
     saveToHistory(nextLayers)
   }
 
   const handleDragEnd = (result: DropResult) => {
     if (!result.destination) return
-
-    const sourceIndex = result.source.index
-    const destIndex = result.destination.index
-    if (sourceIndex === destIndex) return
-
-    setLayers((currentLayers) => {
-      const reordered = [...currentLayers].sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0))
-      const [moved] = reordered.splice(sourceIndex, 1)
-      reordered.splice(destIndex, 0, moved)
-
-      const totalCount = reordered.length
-      const finalLayers = reordered.map((layer, index) => {
-        const newZIndex = totalCount - index
-        return {
-          ...layer,
-          zIndex: layer.isBackground ? 0 : newZIndex,
-        }
-      })
-
-      const cleanHistory = history.slice(0, historyIndex + 1)
-      setHistory([...cleanHistory, { layers: finalLayers, canvasWidth, canvasHeight }])
-      setHistoryIndex(cleanHistory.length)
-
-      return finalLayers
-    })
+    const reordered = [...layers].sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0))
+    const [moved] = reordered.splice(result.source.index, 1)
+    reordered.splice(result.destination.index, 0, moved)
+    const finalLayers = reordered.map((layer, index) => ({ ...layer, zIndex: layer.isBackground ? 0 : reordered.length - index }))
+    setLayers(finalLayers)
+    saveToHistory(finalLayers)
   }
 
-  /* =========================================================
-     TEMPLATE & SIZE
-  ========================================================= */
-
-  const changeCanvasDimensions = (w: number, h: number) => {
-    setCanvasWidth(w)
-    setCanvasHeight(h)
-    saveToHistory(layers, w, h)
-  }
-
+  const changeCanvasDimensions = (w: number, h: number) => { setCanvasWidth(w); setCanvasHeight(h); saveToHistory(layers, w, h) }
   const handleTemplateChange = (e: ChangeEvent<HTMLSelectElement>) => {
-    const selectedName = e.target.value
-    if (!selectedName) return
-    const template = sizeTemplates.find((t) => t.name === selectedName)
-    if (template) {
-      changeCanvasDimensions(template.width, template.height)
-    }
+    const template = sizeTemplates.find((t) => t.name === e.target.value)
+    if (template) changeCanvasDimensions(template.width, template.height)
   }
-
-  /* =========================================================
-     IMAGE LOAD
-  ========================================================= */
 
   const loadImage = (file: File): Promise<{ src: string; width: number; height: number }> => {
     return new Promise((resolve) => {
       const reader = new FileReader()
       reader.onloadend = () => {
         const img = new window.Image()
-        img.onload = () => {
-          resolve({ src: reader.result as string, width: img.width, height: img.height })
-        }
+        img.onload = () => resolve({ src: reader.result as string, width: img.width, height: img.height })
         img.src = reader.result as string
       }
       reader.readAsDataURL(file)
     })
   }
 
-  /* =========================================================
-     ADD LAYERS
-  ========================================================= */
-
   const handleBackgroundUpload = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-
     const img = await loadImage(file)
     const ratio = Math.max(canvasWidth / img.width, canvasHeight / img.height)
-    const width = img.width * ratio
-    const height = img.height * ratio
-
     const backgroundLayer: LayerItem = {
-      id: crypto.randomUUID(),
-      type: 'image',
-      name: '背景',
-      src: img.src,
-      x: (canvasWidth - width) / 2,
-      y: (canvasHeight - height) / 2,
-      width,
-      height,
-      rotation: 0,
-      opacity: 1,
-      visible: true,
-      locked: false,
-      zIndex: 0,
-      isBackground: true,
+      id: crypto.randomUUID(), type: 'image', name: '背景', src: img.src,
+      x: (canvasWidth - img.width * ratio) / 2, y: (canvasHeight - img.height * ratio) / 2,
+      width: img.width * ratio, height: img.height * ratio, rotation: 0, opacity: 1, visible: true, locked: false, zIndex: 0, isBackground: true,
     }
-
-    const nextLayers = [backgroundLayer, ...(layers || []).filter((l) => !l.isBackground)]
+    const nextLayers = [backgroundLayer, ...layers.filter((l) => !l.isBackground)]
     setLayers(nextLayers)
     setSelectedLayerId(backgroundLayer.id)
     saveToHistory(nextLayers)
-    e.target.value = ''
+  }
+
+  const addIconLayer = (src: string, name: string) => {
+    const newLayer: LayerItem = {
+      id: crypto.randomUUID(), type: 'image', name, src,
+      x: 100, y: 100, width: 100, height: 100,
+      rotation: 0, opacity: 1, visible: true, locked: false,
+      zIndex: layers.length + 1,
+      // 漢字アイコンの場合は色変更を反映するためのプロパティを保持
+      shapeColor: kanjiColor
+    }
+    const nextLayers = [...layers, newLayer]
+    setLayers(nextLayers)
+    setSelectedLayerId(newLayer.id)
+    saveToHistory(nextLayers)
+  }
+
+  const addKanjiTextLayer = (name: string) => {
+    const newLayer: LayerItem = {
+      id: crypto.randomUUID(), type: 'text', name, text: name, fontFamily: "'Dela Gothic One', sans-serif",
+      textColor: kanjiColor, fontSize: 80, x: 100, y: 100, width: 200, height: 100,
+      rotation: 0, opacity: 1, visible: true, locked: false, zIndex: layers.length + 1,
+    }
+    const nextLayers = [...layers, newLayer]
+    setLayers(nextLayers)
+    setSelectedLayerId(newLayer.id)
+    saveToHistory(nextLayers)
   }
 
   const handleAddLayer = async (e: ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0]
     if (!file) return
-
     const img = await loadImage(file)
-    const maxSize = 600
-    let width = img.width
-    let height = img.height
-
-    if (width > maxSize) {
-      const ratio = maxSize / width
-      width *= ratio
-      height *= ratio
-    }
-    if (height > maxSize) {
-      const ratio = maxSize / height
-      width *= ratio
-      height *= ratio
-    }
-
     const newLayer: LayerItem = {
-      id: crypto.randomUUID(),
-      type: 'image',
-      name: file.name,
-      src: img.src,
-      x: 200,
-      y: 200,
-      width,
-      height,
-      rotation: 0,
-      opacity: 1,
-      visible: true,
-      locked: false,
-      zIndex: (layers || []).length + 1,
+      id: crypto.randomUUID(), type: 'image', name: file.name, src: img.src,
+      x: 200, y: 200, width: Math.min(img.width, 600), height: Math.min(img.height, 600),
+      rotation: 0, opacity: 1, visible: true, locked: false, zIndex: layers.length + 1,
     }
-
-    const nextLayers = [...(layers || []), newLayer]
+    const nextLayers = [...layers, newLayer]
     setLayers(nextLayers)
     setSelectedLayerId(newLayer.id)
     saveToHistory(nextLayers)
-    e.target.value = ''
   }
 
   const addTextLayer = () => {
     const newLayer: LayerItem = {
-      id: crypto.randomUUID(),
-      type: 'text',
-      name: 'テキスト',
-      text: 'NEW TEXT',
-      fontFamily: "'M PLUS Rounded 1c', sans-serif",
-      textColor: '#ffffff',
-      strokeEnabled: true,
-      strokeColor: '#000000',
-      glowEnabled: false,
-      glowColor: '#ffffff',
-      fontSize: 72,
-      isVertical: false,
-      x: 250,
-      y: 250,
-      width: 600,
-      height: 150,
-      rotation: 0,
-      opacity: 1,
-      visible: true,
-      locked: false,
-      zIndex: (layers || []).length + 1,
+      id: crypto.randomUUID(), type: 'text', name: 'テキスト', text: 'NEW TEXT', fontFamily: "'M PLUS Rounded 1c', sans-serif",
+      textColor: '#ffffff', strokeEnabled: true, strokeColor: '#000000', fontSize: 72, x: 250, y: 250, width: 600, height: 150,
+      rotation: 0, opacity: 1, visible: true, locked: false, zIndex: layers.length + 1,
     }
-
-    const nextLayers = [...(layers || []), newLayer]
+    const nextLayers = [...layers, newLayer]
     setLayers(nextLayers)
     setSelectedLayerId(newLayer.id)
     saveToHistory(nextLayers)
@@ -504,70 +322,32 @@ export default function CardEditorPage() {
 
   const addShapeLayer = () => {
     const newLayer: LayerItem = {
-      id: crypto.randomUUID(),
-      type: 'shape',
-      name: '四角形図形',
-      shapeColor: '#000000',
-      borderRadius: 16,
-      x: 300,
-      y: 400,
-      width: 400,
-      height: 200,
-      rotation: 0,
-      opacity: 0.5,
-      visible: true,
-      locked: false,
-      zIndex: (layers || []).length + 1,
+      id: crypto.randomUUID(), type: 'shape', name: '図形', shapeColor: '#000000', borderRadius: 16,
+      x: 300, y: 400, width: 400, height: 200, rotation: 0, opacity: 0.5, visible: true, locked: false, zIndex: layers.length + 1,
     }
-
-    const nextLayers = [...(layers || []), newLayer]
+    const nextLayers = [...layers, newLayer]
     setLayers(nextLayers)
     setSelectedLayerId(newLayer.id)
     saveToHistory(nextLayers)
   }
 
-  /* =========================================================
-     EXPORT
-  ========================================================= */
-
   const generateImage = async () => {
     if (!captureRef.current) return
-
-    const dataUrl = await toPng(captureRef.current, {
-      cacheBust: true,
-      pixelRatio: 2,
-      filter: (node) => {
-        if (node instanceof HTMLElement && node.id === 'grid-overlay') {
-          return false
-        }
-        return true
-      },
-      style: {
-        overflow: 'hidden',
-        borderRadius: '30px',
-      },
-    })
-
+    const dataUrl = await toPng(captureRef.current, { cacheBust: true, pixelRatio: 2, filter: (node) => !(node instanceof HTMLElement && node.id === 'grid-overlay') })
     const link = document.createElement('a')
     link.download = 'ff14-card.png'
     link.href = dataUrl
     link.click()
   }
 
-  /* =========================================================
-     JSX
-  ========================================================= */
-
-  const currentTemplateName = sizeTemplates.find(
-    (t) => t.width === canvasWidth && t.height === canvasHeight
-  )?.name || ''
+  const currentTemplateName = sizeTemplates.find((t) => t.width === canvasWidth && t.height === canvasHeight)?.name || ''
 
   return (
     <main className="min-h-screen bg-black text-white p-5">
       {/* --- ここに追加してください --- */}
       <div className="mb-6">
-        <Link 
-          href="/" 
+        <Link
+          href="/"
           className="inline-flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-white px-5 py-3 rounded-2xl font-bold transition-all border border-zinc-700 shadow-lg"
         >
           <span>🏠</span> トップページに戻る
@@ -576,7 +356,8 @@ export default function CardEditorPage() {
       {/* --------------------------- */}
 
       {/* Google Fonts を動的に一括インポートするタグ */}
-      <style dangerouslySetInnerHTML={{__html: `
+      <style dangerouslySetInnerHTML={{
+        __html: `
         @import url('https://fonts.googleapis.com/css2?family=Hachi+Maru+Pop&family=Dela+Gothic+One&family=Stecki&family=Monomaniac+One&family=Walter+Turncoat&family=Rock+Salt&family=Bad+Script&family=Amatic+SC:wght@400;700&family=Allura&family=Tangerine:wght@700&family=Itim&display=swap');
       `}} />
 
@@ -589,15 +370,15 @@ export default function CardEditorPage() {
           <div className="space-y-5">
             {/* HISTORY (戻る / 進む ボタン) */}
             <div className="bg-zinc-900 rounded-3xl p-4 grid grid-cols-2 gap-3">
-              <button 
-                onClick={handleUndo} 
+              <button
+                onClick={handleUndo}
                 disabled={historyIndex === 0}
                 className="bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 disabled:hover:bg-zinc-800 rounded-2xl py-3 px-4 font-bold transition-all text-sm flex items-center justify-center gap-2"
               >
                 <span>⬅️</span> 戻る <span className="text-[10px] text-zinc-500 font-mono">Ctrl+Z</span>
               </button>
-              <button 
-                onClick={handleRedo} 
+              <button
+                onClick={handleRedo}
                 disabled={historyIndex >= history.length - 1}
                 className="bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 disabled:hover:bg-zinc-800 rounded-2xl py-3 px-4 font-bold transition-all text-sm flex items-center justify-center gap-2"
               >
@@ -669,7 +450,7 @@ export default function CardEditorPage() {
               <button onClick={() => layerInputRef.current?.click()} className="w-full bg-zinc-800 hover:bg-zinc-700 border border-zinc-700 rounded-2xl p-4 font-black transition-colors">
                 画像をアップロード
               </button>
-              
+
               <button onClick={addTextLayer} className="w-full bg-cyan-600 hover:bg-cyan-500 rounded-2xl p-4 font-black transition-colors">
                 テキスト追加
               </button>
@@ -677,6 +458,52 @@ export default function CardEditorPage() {
               <button onClick={addShapeLayer} className="w-full bg-emerald-600 hover:bg-emerald-500 rounded-2xl p-4 font-black transition-colors">
                 図形（背景座布団）追加
               </button>
+
+              {/* --- ジョブアイコンと漢字アイコンのパネル --- */}
+              <div className="pt-4 border-t border-zinc-700 space-y-4">
+                <div>
+                  <h3 className="text-xl font-bold mb-2">ジョブアイコン</h3>
+                  <div className="grid grid-cols-6 gap-1 max-h-32 overflow-y-auto bg-zinc-800 p-2 rounded-xl">
+                    {jobDotList.map((job) => (
+                      <button key={job.src} onClick={() => addIconLayer(job.src, job.name)} className="hover:bg-zinc-600 rounded p-0.5">
+                        <img src={job.src} alt={job.name} className="w-full" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
+
+                <div>
+              <div className="flex justify-between items-center mb-2">
+                <h3 className="text-xl font-bold">漢字アイコン</h3>
+                {/* スタイルを直接指定して表示を強制します */}
+                <input
+                  type="color"
+                  value={kanjiColor}
+                  onChange={(e) => handleKanjiColorChange(e.target.value)}
+                  style={{
+                    width: '32px',
+                    height: '32px',
+                    cursor: 'pointer',
+                    border: '1px solid #555',
+                    borderRadius: '4px',
+                    backgroundColor: 'transparent'
+                  }}
+                />
+              </div>
+              <div className="grid grid-cols-6 gap-1 max-h-32 overflow-y-auto bg-zinc-800 p-2 rounded-xl">
+                {jobKanjiList.map((job) => (
+                  <button 
+                    key={job.src} 
+                    onClick={() => addIconLayer(job.src, job.name)} 
+                    className="hover:bg-zinc-600 rounded p-0.5"
+                  >
+                    <img src={job.src} alt={job.name} className="w-full" />
+                  </button>
+                ))}
+              </div>
+            </div>
+              </div>
+
             </div>
 
             {/* GRID */}
@@ -716,7 +543,7 @@ export default function CardEditorPage() {
           {/* LAYER PANEL */}
           <div className="bg-zinc-900 rounded-3xl p-5 space-y-5">
             <h2 className="text-4xl font-black">レイヤー</h2>
-            
+
             <DragDropContext onDragEnd={handleDragEnd}>
               <Droppable droppableId="layers-list">
                 {(provided) => (
@@ -732,11 +559,10 @@ export default function CardEditorPage() {
                             ref={dragProvided.innerRef}
                             {...dragProvided.draggableProps}
                             onClick={() => setSelectedLayerId(layer.id)}
-                            className={`rounded-2xl border p-4 cursor-pointer transition-all ${
-                              selectedLayerId === layer.id
-                                ? 'border-cyan-400 bg-cyan-950/40 shadow-[0_0_15px_rgba(34,211,238,0.2)]'
-                                : 'border-zinc-700 bg-zinc-800 hover:border-zinc-600'
-                            } ${snapshot.isDragging ? 'opacity-75 scale-[0.98] border-dashed border-cyan-500' : ''}`}
+                            className={`rounded-2xl border p-4 cursor-pointer transition-all ${selectedLayerId === layer.id
+                              ? 'border-cyan-400 bg-cyan-950/40 shadow-[0_0_15px_rgba(34,211,238,0.2)]'
+                              : 'border-zinc-700 bg-zinc-800 hover:border-zinc-600'
+                              } ${snapshot.isDragging ? 'opacity-75 scale-[0.98] border-dashed border-cyan-500' : ''}`}
                           >
                             <div className="flex justify-between items-start gap-3">
                               <div {...dragProvided.dragHandleProps} className="text-zinc-500 hover:text-zinc-300 px-1 py-2 cursor-grab active:cursor-grabbing text-lg select-none">
@@ -774,7 +600,7 @@ export default function CardEditorPage() {
             {selectedLayer && (
               <div className="border-t border-zinc-700 pt-4 space-y-4 max-h-[540px] overflow-auto pr-1">
                 <h3 className="text-2xl font-black text-cyan-400">レイヤー編集</h3>
-                
+
                 {/* 座標数値入力欄 */}
                 <div className="grid grid-cols-2 gap-3 bg-zinc-950/40 p-3 rounded-2xl border border-zinc-800">
                   <div>
@@ -868,17 +694,17 @@ export default function CardEditorPage() {
                 {selectedLayer.type === 'text' && (
                   <>
                     <textarea value={selectedLayer.text || ''} onChange={(e) => updateLayer(selectedLayer.id, { text: e.target.value })} className="w-full h-20 bg-zinc-800 rounded-2xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500" />
-                    
+
                     {/* 文字の色 */}
                     <div className="flex justify-between items-center text-xs font-bold text-zinc-400">
                       <span>文字の色</span>
                       <div className="flex items-center gap-2">
                         <span className="font-mono uppercase text-[11px]">{selectedLayer.textColor}</span>
-                        <input 
-                          type="color" 
-                          value={selectedLayer.textColor || '#ffffff'} 
-                          onChange={(e) => updateLayer(selectedLayer.id, { textColor: e.target.value })} 
-                          className="w-8 h-8 rounded-lg border-0 cursor-pointer bg-transparent" 
+                        <input
+                          type="color"
+                          value={selectedLayer.textColor || '#ffffff'}
+                          onChange={(e) => updateLayer(selectedLayer.id, { textColor: e.target.value })}
+                          className="w-8 h-8 rounded-lg border-0 cursor-pointer bg-transparent"
                         />
                       </div>
                     </div>
@@ -890,9 +716,8 @@ export default function CardEditorPage() {
                         <button
                           type="button"
                           onClick={() => updateLayer(selectedLayer.id, { strokeEnabled: !selectedLayer.strokeEnabled })}
-                          className={`px-3 py-1.5 rounded-xl border text-[11px] font-bold ${
-                            selectedLayer.strokeEnabled ? 'bg-cyan-600 border-cyan-400 text-white' : 'bg-zinc-800 border-zinc-700 text-zinc-400'
-                          }`}
+                          className={`px-3 py-1.5 rounded-xl border text-[11px] font-bold ${selectedLayer.strokeEnabled ? 'bg-cyan-600 border-cyan-400 text-white' : 'bg-zinc-800 border-zinc-700 text-zinc-400'
+                            }`}
                         >
                           {selectedLayer.strokeEnabled ? 'ON' : 'OFF'}
                         </button>
@@ -902,11 +727,11 @@ export default function CardEditorPage() {
                           <span>外枠のカラー</span>
                           <div className="flex items-center gap-2">
                             <span className="font-mono uppercase text-[11px]">{selectedLayer.strokeColor || '#000000'}</span>
-                            <input 
-                              type="color" 
-                              value={selectedLayer.strokeColor || '#000000'} 
-                              onChange={(e) => updateLayer(selectedLayer.id, { strokeColor: e.target.value })} 
-                              className="w-7 h-7 rounded-lg cursor-pointer bg-transparent" 
+                            <input
+                              type="color"
+                              value={selectedLayer.strokeColor || '#000000'}
+                              onChange={(e) => updateLayer(selectedLayer.id, { strokeColor: e.target.value })}
+                              className="w-7 h-7 rounded-lg cursor-pointer bg-transparent"
                             />
                           </div>
                         </div>
@@ -920,9 +745,8 @@ export default function CardEditorPage() {
                         <button
                           type="button"
                           onClick={() => updateLayer(selectedLayer.id, { glowEnabled: !selectedLayer.glowEnabled })}
-                          className={`px-3 py-1.5 rounded-xl border text-[11px] font-bold ${
-                            selectedLayer.glowEnabled ? 'bg-purple-600 border-purple-400 text-white' : 'bg-zinc-800 border-zinc-700 text-zinc-400'
-                          }`}
+                          className={`px-3 py-1.5 rounded-xl border text-[11px] font-bold ${selectedLayer.glowEnabled ? 'bg-purple-600 border-purple-400 text-white' : 'bg-zinc-800 border-zinc-700 text-zinc-400'
+                            }`}
                         >
                           {selectedLayer.glowEnabled ? 'ON' : 'OFF'}
                         </button>
@@ -932,11 +756,11 @@ export default function CardEditorPage() {
                           <span>ネオンのカラー</span>
                           <div className="flex items-center gap-2">
                             <span className="font-mono uppercase text-[11px]">{selectedLayer.glowColor || '#ffffff'}</span>
-                            <input 
-                              type="color" 
-                              value={selectedLayer.glowColor || '#ffffff'} 
-                              onChange={(e) => updateLayer(selectedLayer.id, { glowColor: e.target.value })} 
-                              className="w-7 h-7 rounded-lg cursor-pointer bg-transparent" 
+                            <input
+                              type="color"
+                              value={selectedLayer.glowColor || '#ffffff'}
+                              onChange={(e) => updateLayer(selectedLayer.id, { glowColor: e.target.value })}
+                              className="w-7 h-7 rounded-lg cursor-pointer bg-transparent"
                             />
                           </div>
                         </div>
@@ -949,9 +773,8 @@ export default function CardEditorPage() {
                       <button
                         type="button"
                         onClick={() => updateLayer(selectedLayer.id, { isVertical: !selectedLayer.isVertical })}
-                        className={`px-4 py-2 rounded-xl border font-bold transition-all ${
-                          selectedLayer.isVertical ? 'bg-cyan-600 border-cyan-400 text-white' : 'bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700'
-                        }`}
+                        className={`px-4 py-2 rounded-xl border font-bold transition-all ${selectedLayer.isVertical ? 'bg-cyan-600 border-cyan-400 text-white' : 'bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700'
+                          }`}
                       >
                         {selectedLayer.isVertical ? '縦書き中' : '横書き中'}
                       </button>
@@ -969,7 +792,7 @@ export default function CardEditorPage() {
                         </option>
                       ))}
                     </select>
-                    
+
                     {/* 文字サイズ */}
                     <div className="space-y-2">
                       <div className="flex justify-between items-center">
@@ -986,13 +809,13 @@ export default function CardEditorPage() {
                           <span className="absolute right-1.5 text-[9px] text-zinc-500 font-bold">pt</span>
                         </div>
                       </div>
-                      <input 
-                        type="range" 
-                        min="12" 
-                        max="300" 
-                        value={selectedLayer.fontSize || 72} 
-                        onChange={(e) => updateLayer(selectedLayer.id, { fontSize: Number(e.target.value) })} 
-                        className="w-full accent-cyan-500" 
+                      <input
+                        type="range"
+                        min="12"
+                        max="300"
+                        value={selectedLayer.fontSize || 72}
+                        onChange={(e) => updateLayer(selectedLayer.id, { fontSize: Number(e.target.value) })}
+                        className="w-full accent-cyan-500"
                       />
                     </div>
                   </>
@@ -1012,22 +835,24 @@ export default function CardEditorPage() {
               <div style={{ width: canvasWidth * previewScale, height: canvasHeight * previewScale }}>
                 <div style={{ width: canvasWidth, height: canvasHeight, transform: `scale(${previewScale})`, transformOrigin: 'top left' }}>
                   <div ref={captureRef} className={`relative rounded-[30px] border border-white/20 bg-zinc-950 transition-all ${selectedLayerId ? 'overflow-visible' : 'overflow-hidden'}`} style={{ width: canvasWidth, height: canvasHeight }}>
-                    
+
                     {/* LAYERS */}
                     {sortedLayers.map((layer) => (
                       <Rnd
                         key={`${layer.id}-${layer.zIndex}`}
                         disableDragging={layer.locked}
-                        enableResizing={!layer.locked}
+                        // ↓ここを修正（enableResizingをオブジェクト形式に変更）
+                        enableResizing={!layer.locked ? {
+                          top: true, right: true, bottom: true, left: true,
+                          topRight: true, bottomRight: true, bottomLeft: true, topLeft: true
+                        } : false}
                         dragGrid={[1, 1]}
                         resizeGrid={[1, 1]}
                         scale={previewScale}
                         position={{ x: layer.x, y: layer.y }}
                         size={{ width: layer.width, height: layer.height }}
                         onMouseDown={() => setSelectedLayerId(layer.id)}
-                        onDragStop={(e, d) => {
-                          updateLayer(layer.id, { x: d.x, y: d.y })
-                        }}
+                        onDragStop={(e, d) => updateLayer(layer.id, { x: d.x, y: d.y })}
                         onResizeStop={(e, dir, ref, delta, pos) => {
                           updateLayer(layer.id, {
                             width: parseFloat(ref.style.width),
@@ -1039,8 +864,6 @@ export default function CardEditorPage() {
                         style={{
                           zIndex: layer.zIndex,
                           opacity: layer.visible ? layer.opacity : 0,
-                          left: `${layer.x}px`,
-                          top: `${layer.y}px`
                         }}
                       >
                         <div className="relative w-full h-full">

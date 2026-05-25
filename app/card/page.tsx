@@ -319,7 +319,7 @@ export default function CardEditorPage() {
 
   const addTextLayer = () => {
     const newLayer: LayerItem = {
-      id: crypto.randomUUID(), type: 'text', name: 'テキスト', text: 'NEW TEXT', fontFamily: "'M PLUS Rounded 1c', sans-serif",
+      id: crypto.randomUUID(), type: 'text', name: 'テキスト', text: '© SQUARE ENIX', fontFamily: "'M PLUS Rounded 1c', sans-serif",
       textColor: '#ffffff', strokeEnabled: true, strokeColor: '#000000', fontSize: 72, x: 250, y: 250, width: 600, height: 150,
       rotation: 0, opacity: 1, visible: true, locked: false, zIndex: layers.length + 1,
     }

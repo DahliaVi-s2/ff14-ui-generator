@@ -20,17 +20,25 @@ export default function HomePage() {
             <h3 className="text-2xl font-black mb-2">キャラクターカード編集</h3>
             <p className="text-sm text-purple-100">レイヤー編集で自由なデザインを作成。</p>
           </Link>
+
           <Link href="/generator" className="bg-blue-600 hover:bg-blue-500 p-8 rounded-3xl text-left transition transform hover:scale-[1.02]">
             <h3 className="text-2xl font-black mb-2">ジョブレベル生成</h3>
             <p className="text-sm text-blue-100">現在のジョブレベルを素早く画像化。</p>
           </Link>
+
           <Link href="/nameplate" className="bg-emerald-600 hover:bg-emerald-500 p-8 rounded-3xl text-left transition transform hover:scale-[1.02]">
             <h3 className="text-2xl font-black mb-2">ネームプレート生成</h3>
             <p className="text-sm text-emerald-100">SNSやコミュニティ用のロゴを作成。</p>
           </Link>
-          <Link href="/howto" className="bg-zinc-700 hover:bg-zinc-600 p-8 rounded-3xl text-left transition transform hover:scale-[1.02]">
+
+          <Link href="/qr-generator" className="bg-orange-600 hover:bg-orange-500 p-8 rounded-3xl text-left transition transform hover:scale-[1.02]">
+            <h3 className="text-2xl font-black mb-2">QRコード生成</h3>
+            <p className="text-sm text-orange-100">URLから専用QRコードを即座に作成。</p>
+          </Link>
+
+          <Link href="/howto" className="md:col-span-2 bg-zinc-700 hover:bg-zinc-600 p-8 rounded-3xl text-left transition transform hover:scale-[1.02]">
             <h3 className="text-2xl font-black mb-2">使い方ガイド</h3>
-            <p className="text-sm text-zinc-300">各ツールの詳細な使い方を解説。</p>
+            <p className="text-sm text-zinc-300">各ツールの詳細な使い方を解説しています。</p>
           </Link>
         </div>
       </section>
@@ -43,7 +51,7 @@ export default function HomePage() {
             当サイトは、ファイナルファンタジーXIV（FF14）を楽しむプレイヤーの皆様のコミュニティ活動を支援するために制作されました。
           </p>
           <p>
-            特にFC（フリーカンパニー）の募集、SNSでの自己紹介、Discordサーバーのアイコン、配信活動などで必要となる高品質な画像素材を、専門的な画像編集ソフトを使わずにブラウザだけで作成できることを目的としています。
+            SNSでの自己紹介、Discordサーバーのアイコン、配信活動などで必要となる画像素材を、専門的な画像編集ソフトを使わずにブラウザだけで作成できることを目的としています。
           </p>
         </div>
       </section>

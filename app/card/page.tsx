@@ -89,28 +89,35 @@ const fonts = [
 ]
 
 function LayerContent({ layer }: { layer: LayerItem }) {
-  if (!layer) return null
+  if (!layer) return null;
+
+  // 漢字アイコン(jp)か判定
+  const isKanji = layer.src?.includes('_jp.png');
+
   return (
     <div className="w-full h-full relative" style={{ transform: `rotate(${layer.rotation ?? 0}deg)`, transformOrigin: 'center' }}>
       {layer.type === 'image' && (
-  <div
-    style={{
-      width: '100%',
-      height: '100%',
-      // アイコン画像を「マスク（型）」として使用
-      WebkitMaskImage: `url(${layer.src})`,
-      maskImage: `url(${layer.src})`,
-      WebkitMaskSize: 'contain',
-      maskSize: 'contain',
-      WebkitMaskRepeat: 'no-repeat',
-      maskRepeat: 'no-repeat',
-      WebkitMaskPosition: 'center',
-      maskPosition: 'center',
-      // マスクされた部分をこの色で塗りつぶす
-      backgroundColor: layer.shapeColor || '#000000'
-    }}
-  />
-)}
+        <div
+          style={{
+            width: '100%',
+            height: '100%',
+            // 漢字なら「型抜き」をして色を塗る。ドット等は通常表示。
+            WebkitMaskImage: isKanji ? `url(${layer.src})` : 'none',
+            maskImage: isKanji ? `url(${layer.src})` : 'none',
+            WebkitMaskSize: 'contain',
+            maskSize: 'contain',
+            WebkitMaskRepeat: 'no-repeat',
+            maskRepeat: 'no-repeat',
+            WebkitMaskPosition: 'center',
+            maskPosition: 'center',
+            backgroundColor: isKanji ? (layer.shapeColor || '#000000') : 'transparent',
+            backgroundImage: !isKanji ? `url(${layer.src})` : 'none',
+            backgroundSize: 'contain',
+            backgroundRepeat: 'no-repeat',
+            backgroundPosition: 'center'
+          }}
+        />
+      )}
       {layer.type === 'text' && (
         <div className="w-full h-full flex items-center justify-center text-center whitespace-pre-wrap break-words leading-relaxed pointer-events-none select-none"
           style={{ fontFamily: layer.fontFamily, color: layer.textColor, fontSize: `${layer.fontSize}px`, writingMode: layer.isVertical ? 'vertical-rl' : 'horizontal-tb', WebkitWritingMode: layer.isVertical ? 'vertical-rl' : 'horizontal-tb', WebkitTextStroke: layer.strokeEnabled ? `3px ${layer.strokeColor || '#000000'}` : '0px transparent', textShadow: layer.glowEnabled ? `0 0 12px ${layer.glowColor || '#ffffff'}, 0 0 24px ${layer.glowColor || '#ffffff'}` : 'none' }}>
@@ -473,35 +480,35 @@ export default function CardEditorPage() {
                 </div>
 
                 <div>
-              <div className="flex justify-between items-center mb-2">
-                <h3 className="text-xl font-bold">漢字アイコン</h3>
-                {/* スタイルを直接指定して表示を強制します */}
-                <input
-                  type="color"
-                  value={kanjiColor}
-                  onChange={(e) => handleKanjiColorChange(e.target.value)}
-                  style={{
-                    width: '32px',
-                    height: '32px',
-                    cursor: 'pointer',
-                    border: '1px solid #555',
-                    borderRadius: '4px',
-                    backgroundColor: 'transparent'
-                  }}
-                />
-              </div>
-              <div className="grid grid-cols-6 gap-1 max-h-32 overflow-y-auto bg-zinc-800 p-2 rounded-xl">
-                {jobKanjiList.map((job) => (
-                  <button 
-                    key={job.src} 
-                    onClick={() => addIconLayer(job.src, job.name)} 
-                    className="hover:bg-zinc-600 rounded p-0.5"
-                  >
-                    <img src={job.src} alt={job.name} className="w-full" />
-                  </button>
-                ))}
-              </div>
-            </div>
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="text-xl font-bold">漢字アイコン</h3>
+                    {/* スタイルを直接指定して表示を強制します */}
+                    <input
+                      type="color"
+                      value={kanjiColor}
+                      onChange={(e) => handleKanjiColorChange(e.target.value)}
+                      style={{
+                        width: '32px',
+                        height: '32px',
+                        cursor: 'pointer',
+                        border: '1px solid #555',
+                        borderRadius: '4px',
+                        backgroundColor: 'transparent'
+                      }}
+                    />
+                  </div>
+                  <div className="grid grid-cols-6 gap-1 max-h-32 overflow-y-auto bg-zinc-800 p-2 rounded-xl">
+                    {jobKanjiList.map((job) => (
+                      <button
+                        key={job.src}
+                        onClick={() => addIconLayer(job.src, job.name)}
+                        className="hover:bg-zinc-600 rounded p-0.5"
+                      >
+                        <img src={job.src} alt={job.name} className="w-full" />
+                      </button>
+                    ))}
+                  </div>
+                </div>
               </div>
 
             </div>
@@ -597,307 +604,151 @@ export default function CardEditorPage() {
             </DragDropContext>
 
             {/* EDIT */}
-            {selectedLayer && (
-              <div className="border-t border-zinc-700 pt-4 space-y-4 max-h-[540px] overflow-auto pr-1">
-                <h3 className="text-2xl font-black text-cyan-400">レイヤー編集</h3>
+          {selectedLayer && (
+            <div className="border-t border-zinc-700 pt-4 space-y-4 max-h-[540px] overflow-auto pr-1">
+              <h3 className="text-2xl font-black text-cyan-400">レイヤー編集</h3>
 
-                {/* 座標数値入力欄 */}
-                <div className="grid grid-cols-2 gap-3 bg-zinc-950/40 p-3 rounded-2xl border border-zinc-800">
-                  <div>
-                    <p className="mb-1 text-[11px] font-bold text-zinc-400">位置 (X)</p>
-                    <div className="relative flex items-center">
-                      <input
-                        type="number"
-                        value={Math.round(selectedLayer.x)}
-                        onChange={(e) => updateLayer(selectedLayer.id, { x: Number(e.target.value) || 0 })}
-                        className="w-full bg-zinc-800 rounded-xl px-2.5 py-1.5 text-sm text-white font-bold border border-zinc-700"
-                      />
-                      <span className="absolute right-2 text-[10px] text-zinc-500 font-bold">px</span>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="mb-1 text-[11px] font-bold text-zinc-400">位置 (Y)</p>
-                    <div className="relative flex items-center">
-                      <input
-                        type="number"
-                        value={Math.round(selectedLayer.y)}
-                        onChange={(e) => updateLayer(selectedLayer.id, { y: Number(e.target.value) || 0 })}
-                        className="w-full bg-zinc-800 rounded-xl px-2.5 py-1.5 text-sm text-white font-bold border border-zinc-700"
-                      />
-                      <span className="absolute right-2 text-[10px] text-zinc-500 font-bold">px</span>
-                    </div>
-                  </div>
-                </div>
-
-                {/* サイズ数値入力欄 */}
-                <div className="grid grid-cols-2 gap-3 bg-zinc-950/40 p-3 rounded-2xl border border-zinc-800">
-                  <div>
-                    <p className="mb-1 text-[11px] font-bold text-zinc-400">横幅 (W)</p>
-                    <div className="relative flex items-center">
-                      <input
-                        type="number"
-                        min="1"
-                        max="5000"
-                        value={Math.round(selectedLayer.width)}
-                        onChange={(e) => updateLayer(selectedLayer.id, { width: Number(e.target.value) || 1 })}
-                        className="w-full bg-zinc-800 rounded-xl px-2.5 py-1.5 text-sm text-white font-bold border border-zinc-700"
-                      />
-                      <span className="absolute right-2 text-[10px] text-zinc-500 font-bold">px</span>
-                    </div>
-                  </div>
-                  <div>
-                    <p className="mb-1 text-[11px] font-bold text-zinc-400">高さ (H)</p>
-                    <div className="relative flex items-center">
-                      <input
-                        type="number"
-                        min="1"
-                        max="5000"
-                        value={Math.round(selectedLayer.height)}
-                        onChange={(e) => updateLayer(selectedLayer.id, { height: Number(e.target.value) || 1 })}
-                        className="w-full bg-zinc-800 rounded-xl px-2.5 py-1.5 text-sm text-white font-bold border border-zinc-700"
-                      />
-                      <span className="absolute right-2 text-[10px] text-zinc-500 font-bold">px</span>
-                    </div>
-                  </div>
-                </div>
-
+              {/* 座標とサイズ設定（全タイプ共通） */}
+              <div className="grid grid-cols-2 gap-3 bg-zinc-950/40 p-3 rounded-2xl border border-zinc-800">
                 <div>
-                  <p className="mb-1 text-xs font-bold text-zinc-400">不透明度</p>
-                  <input type="range" min="0" max="1" step="0.01" value={selectedLayer.opacity} onChange={(e) => updateLayer(selectedLayer.id, { opacity: Number(e.target.value) })} className="w-full accent-cyan-500" />
+                  <p className="mb-1 text-[11px] font-bold text-zinc-400">位置 (X)</p>
+                  <input type="number" value={Math.round(selectedLayer.x)} onChange={(e) => updateLayer(selectedLayer.id, { x: Number(e.target.value) || 0 })} className="w-full bg-zinc-800 rounded-xl px-2.5 py-1.5 text-sm text-white font-bold border border-zinc-700" />
                 </div>
-
                 <div>
-                  <p className="mb-1 text-xs font-bold text-zinc-400">回転角度</p>
-                  <input type="range" min="-180" max="180" value={selectedLayer.rotation} onChange={(e) => updateLayer(selectedLayer.id, { rotation: Number(e.target.value) })} className="w-full" />
+                  <p className="mb-1 text-[11px] font-bold text-zinc-400">位置 (Y)</p>
+                  <input type="number" value={Math.round(selectedLayer.y)} onChange={(e) => updateLayer(selectedLayer.id, { y: Number(e.target.value) || 0 })} className="w-full bg-zinc-800 rounded-xl px-2.5 py-1.5 text-sm text-white font-bold border border-zinc-700" />
                 </div>
-
-                {selectedLayer.type === 'shape' && (
-                  <>
-                    <div className="flex justify-between items-center text-xs font-bold text-zinc-400">
-                      <span>図形の色</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono uppercase text-[11px]">{selectedLayer.shapeColor}</span>
-                        <input type="color" value={selectedLayer.shapeColor || '#000000'} onChange={(e) => updateLayer(selectedLayer.id, { shapeColor: e.target.value })} className="w-8 h-8 rounded-lg border-0 cursor-pointer bg-transparent" />
-                      </div>
-                    </div>
-
-                    <div>
-                      <div className="flex justify-between text-xs font-bold text-zinc-400 mb-1">
-                        <span>角の丸み（角丸）</span>
-                        <span>{selectedLayer.borderRadius || 0}px</span>
-                      </div>
-                      <input type="range" min="0" max="150" step="1" value={selectedLayer.borderRadius || 0} onChange={(e) => updateLayer(selectedLayer.id, { borderRadius: Number(e.target.value) })} className="w-full accent-cyan-500" />
-                    </div>
-                  </>
-                )}
-
-                {selectedLayer.type === 'text' && (
-                  <>
-                    <textarea value={selectedLayer.text || ''} onChange={(e) => updateLayer(selectedLayer.id, { text: e.target.value })} className="w-full h-20 bg-zinc-800 rounded-2xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500" />
-
-                    {/* 文字の色 */}
-                    <div className="flex justify-between items-center text-xs font-bold text-zinc-400">
-                      <span>文字の色</span>
-                      <div className="flex items-center gap-2">
-                        <span className="font-mono uppercase text-[11px]">{selectedLayer.textColor}</span>
-                        <input
-                          type="color"
-                          value={selectedLayer.textColor || '#ffffff'}
-                          onChange={(e) => updateLayer(selectedLayer.id, { textColor: e.target.value })}
-                          className="w-8 h-8 rounded-lg border-0 cursor-pointer bg-transparent"
-                        />
-                      </div>
-                    </div>
-
-                    {/* 文字の外枠（縁取り）設定 */}
-                    <div className="bg-zinc-950/30 p-3 rounded-2xl border border-zinc-800 space-y-3">
-                      <div className="flex justify-between items-center text-xs font-bold text-zinc-400">
-                        <span>文字の外枠（フチ）</span>
-                        <button
-                          type="button"
-                          onClick={() => updateLayer(selectedLayer.id, { strokeEnabled: !selectedLayer.strokeEnabled })}
-                          className={`px-3 py-1.5 rounded-xl border text-[11px] font-bold ${selectedLayer.strokeEnabled ? 'bg-cyan-600 border-cyan-400 text-white' : 'bg-zinc-800 border-zinc-700 text-zinc-400'
-                            }`}
-                        >
-                          {selectedLayer.strokeEnabled ? 'ON' : 'OFF'}
-                        </button>
-                      </div>
-                      {selectedLayer.strokeEnabled && (
-                        <div className="flex justify-between items-center text-xs font-bold text-zinc-400">
-                          <span>外枠のカラー</span>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono uppercase text-[11px]">{selectedLayer.strokeColor || '#000000'}</span>
-                            <input
-                              type="color"
-                              value={selectedLayer.strokeColor || '#000000'}
-                              onChange={(e) => updateLayer(selectedLayer.id, { strokeColor: e.target.value })}
-                              className="w-7 h-7 rounded-lg cursor-pointer bg-transparent"
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* 文字のネオン（光彩）設定 */}
-                    <div className="bg-zinc-950/30 p-3 rounded-2xl border border-zinc-800 space-y-3">
-                      <div className="flex justify-between items-center text-xs font-bold text-zinc-400">
-                        <span>ネオン（発光効果）</span>
-                        <button
-                          type="button"
-                          onClick={() => updateLayer(selectedLayer.id, { glowEnabled: !selectedLayer.glowEnabled })}
-                          className={`px-3 py-1.5 rounded-xl border text-[11px] font-bold ${selectedLayer.glowEnabled ? 'bg-purple-600 border-purple-400 text-white' : 'bg-zinc-800 border-zinc-700 text-zinc-400'
-                            }`}
-                        >
-                          {selectedLayer.glowEnabled ? 'ON' : 'OFF'}
-                        </button>
-                      </div>
-                      {selectedLayer.glowEnabled && (
-                        <div className="flex justify-between items-center text-xs font-bold text-zinc-400">
-                          <span>ネオンのカラー</span>
-                          <div className="flex items-center gap-2">
-                            <span className="font-mono uppercase text-[11px]">{selectedLayer.glowColor || '#ffffff'}</span>
-                            <input
-                              type="color"
-                              value={selectedLayer.glowColor || '#ffffff'}
-                              onChange={(e) => updateLayer(selectedLayer.id, { glowColor: e.target.value })}
-                              className="w-7 h-7 rounded-lg cursor-pointer bg-transparent"
-                            />
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* 文字の方向 */}
-                    <div className="flex justify-between items-center text-xs font-bold text-zinc-400">
-                      <span>文字の方向</span>
-                      <button
-                        type="button"
-                        onClick={() => updateLayer(selectedLayer.id, { isVertical: !selectedLayer.isVertical })}
-                        className={`px-4 py-2 rounded-xl border font-bold transition-all ${selectedLayer.isVertical ? 'bg-cyan-600 border-cyan-400 text-white' : 'bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700'
-                          }`}
-                      >
-                        {selectedLayer.isVertical ? '縦書き中' : '横書き中'}
-                      </button>
-                    </div>
-
-                    {/* フォント種類 */}
-                    <select
-                      value={selectedLayer.fontFamily}
-                      onChange={(e) => updateLayer(selectedLayer.id, { fontFamily: e.target.value })}
-                      className="w-full bg-zinc-800 rounded-2xl p-2.5 text-sm text-white font-bold"
-                    >
-                      {fonts.map((f) => (
-                        <option key={f.name} value={f.value}>
-                          {f.name}
-                        </option>
-                      ))}
-                    </select>
-
-                    {/* 文字サイズ */}
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <p className="text-xs font-bold text-zinc-400">文字サイズ</p>
-                        <div className="relative flex items-center w-24">
-                          <input
-                            type="number"
-                            min="10"
-                            max="500"
-                            value={selectedLayer.fontSize || 72}
-                            onChange={(e) => updateLayer(selectedLayer.id, { fontSize: Number(e.target.value) || 12 })}
-                            className="w-full bg-zinc-800 rounded-xl px-2 py-1 text-xs text-white font-bold border border-zinc-700 text-center"
-                          />
-                          <span className="absolute right-1.5 text-[9px] text-zinc-500 font-bold">pt</span>
-                        </div>
-                      </div>
-                      <input
-                        type="range"
-                        min="12"
-                        max="300"
-                        value={selectedLayer.fontSize || 72}
-                        onChange={(e) => updateLayer(selectedLayer.id, { fontSize: Number(e.target.value) })}
-                        className="w-full accent-cyan-500"
-                      />
-                    </div>
-                  </>
-                )}
+                <div>
+                  <p className="mb-1 text-[11px] font-bold text-zinc-400">横幅 (W)</p>
+                  <input type="number" value={Math.round(selectedLayer.width)} onChange={(e) => updateLayer(selectedLayer.id, { width: Number(e.target.value) || 1 })} className="w-full bg-zinc-800 rounded-xl px-2.5 py-1.5 text-sm text-white font-bold border border-zinc-700" />
+                </div>
+                <div>
+                  <p className="mb-1 text-[11px] font-bold text-zinc-400">高さ (H)</p>
+                  <input type="number" value={Math.round(selectedLayer.height)} onChange={(e) => updateLayer(selectedLayer.id, { height: Number(e.target.value) || 1 })} className="w-full bg-zinc-800 rounded-xl px-2.5 py-1.5 text-sm text-white font-bold border border-zinc-700" />
+                </div>
               </div>
-            )}
+
+              {/* 画像レイヤーの特殊設定 */}
+              {selectedLayer.type === 'image' && (
+                <div className="space-y-4 bg-zinc-950/40 p-4 rounded-2xl border border-zinc-800">
+                  <h3 className="font-bold text-lg border-b border-zinc-700 pb-2">画像設定</h3>
+                  <div>
+                    <label className="block text-sm mb-1 text-zinc-400">アイコンの色</label>
+                    <input
+                      type="color"
+                      value={selectedLayer.shapeColor || '#000000'}
+                      onChange={(e) => updateLayer(selectedLayer.id, { shapeColor: e.target.value })}
+                      className="w-full h-10 cursor-pointer bg-transparent border-0"
+                    />
+                  </div>
+                  <div>
+                    <div className="flex justify-between text-xs font-bold text-zinc-400 mb-1">
+                      <span>角の丸み（角丸）</span>
+                      <span>{selectedLayer.borderRadius || 0}px</span>
+                    </div>
+                    <input type="range" min="0" max="150" step="1" value={selectedLayer.borderRadius || 0} onChange={(e) => updateLayer(selectedLayer.id, { borderRadius: Number(e.target.value) })} className="w-full accent-cyan-500" />
+                  </div>
+                </div>
+              )}
+
+              {/* 共通設定（不透明度・回転） */}
+              <div>
+                <p className="mb-1 text-xs font-bold text-zinc-400">不透明度</p>
+                <input type="range" min="0" max="1" step="0.01" value={selectedLayer.opacity} onChange={(e) => updateLayer(selectedLayer.id, { opacity: Number(e.target.value) })} className="w-full accent-cyan-500" />
+              </div>
+              <div>
+                <p className="mb-1 text-xs font-bold text-zinc-400">回転角度</p>
+                <input type="range" min="-180" max="180" value={selectedLayer.rotation} onChange={(e) => updateLayer(selectedLayer.id, { rotation: Number(e.target.value) })} className="w-full" />
+              </div>
+
+              {/* テキスト用編集 */}
+              {selectedLayer.type === 'text' && (
+                <div className="space-y-4">
+                  <textarea value={selectedLayer.text || ''} onChange={(e) => updateLayer(selectedLayer.id, { text: e.target.value })} className="w-full h-20 bg-zinc-800 rounded-2xl p-3 text-sm focus:outline-none" />
+                  <div className="flex justify-between items-center text-xs font-bold text-zinc-400">
+                    <span>文字の色</span>
+                    <input type="color" value={selectedLayer.textColor || '#ffffff'} onChange={(e) => updateLayer(selectedLayer.id, { textColor: e.target.value })} className="w-8 h-8 rounded-lg cursor-pointer" />
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
           </div>
 
-          {/* CANVAS (PREVIEW) */}
-          <div className="bg-zinc-900 rounded-3xl p-5 overflow-auto">
-            <div className="flex items-center gap-4 mb-5">
-              <p className="font-black whitespace-nowrap">プレビュー倍率</p>
-              <input type="range" min="0.1" max="1" step="0.01" value={previewScale} onChange={(e) => setPreviewScale(Number(e.target.value))} className="w-full" />
-            </div>
+        {/* CANVAS (PREVIEW) */}
+        <div className="bg-zinc-900 rounded-3xl p-5 overflow-auto">
+          <div className="flex items-center gap-4 mb-5">
+            <p className="font-black whitespace-nowrap">プレビュー倍率</p>
+            <input type="range" min="0.1" max="1" step="0.01" value={previewScale} onChange={(e) => setPreviewScale(Number(e.target.value))} className="w-full" />
+          </div>
 
-            <div className="flex justify-center items-start overflow-auto">
-              <div style={{ width: canvasWidth * previewScale, height: canvasHeight * previewScale }}>
-                <div style={{ width: canvasWidth, height: canvasHeight, transform: `scale(${previewScale})`, transformOrigin: 'top left' }}>
-                  <div ref={captureRef} className={`relative rounded-[30px] border border-white/20 bg-zinc-950 transition-all ${selectedLayerId ? 'overflow-visible' : 'overflow-hidden'}`} style={{ width: canvasWidth, height: canvasHeight }}>
+          <div className="flex justify-center items-start overflow-auto">
+            <div style={{ width: canvasWidth * previewScale, height: canvasHeight * previewScale }}>
+              <div style={{ width: canvasWidth, height: canvasHeight, transform: `scale(${previewScale})`, transformOrigin: 'top left' }}>
+                <div ref={captureRef} className={`relative rounded-[30px] border border-white/20 bg-zinc-950 transition-all ${selectedLayerId ? 'overflow-visible' : 'overflow-hidden'}`} style={{ width: canvasWidth, height: canvasHeight }}>
 
-                    {/* LAYERS */}
-                    {sortedLayers.map((layer) => (
-                      <Rnd
-                        key={`${layer.id}-${layer.zIndex}`}
-                        disableDragging={layer.locked}
-                        // ↓ここを修正（enableResizingをオブジェクト形式に変更）
-                        enableResizing={!layer.locked ? {
-                          top: true, right: true, bottom: true, left: true,
-                          topRight: true, bottomRight: true, bottomLeft: true, topLeft: true
-                        } : false}
-                        dragGrid={[1, 1]}
-                        resizeGrid={[1, 1]}
-                        scale={previewScale}
-                        position={{ x: layer.x, y: layer.y }}
-                        size={{ width: layer.width, height: layer.height }}
-                        onMouseDown={() => setSelectedLayerId(layer.id)}
-                        onDragStop={(e, d) => updateLayer(layer.id, { x: d.x, y: d.y })}
-                        onResizeStop={(e, dir, ref, delta, pos) => {
-                          updateLayer(layer.id, {
-                            width: parseFloat(ref.style.width),
-                            height: parseFloat(ref.style.height),
-                            x: pos.x,
-                            y: pos.y,
-                          })
-                        }}
-                        style={{
-                          zIndex: layer.zIndex,
-                          opacity: layer.visible ? layer.opacity : 0,
-                        }}
-                      >
-                        <div className="relative w-full h-full">
-                          <LayerContent layer={layer} />
-                          {selectedLayerId === layer.id && (
-                            <div className="absolute inset-0 border-2 border-cyan-400 shadow-[0_0_25px_rgba(34,211,238,0.9)] pointer-events-none" />
-                          )}
-                        </div>
-                      </Rnd>
-                    ))}
+                  {/* LAYERS */}
+                  {sortedLayers.map((layer) => (
+                    <Rnd
+                      key={`${layer.id}-${layer.zIndex}`}
+                      disableDragging={layer.locked}
+                      // ↓ここを修正（enableResizingをオブジェクト形式に変更）
+                      enableResizing={!layer.locked ? {
+                        top: true, right: true, bottom: true, left: true,
+                        topRight: true, bottomRight: true, bottomLeft: true, topLeft: true
+                      } : false}
+                      dragGrid={[1, 1]}
+                      resizeGrid={[1, 1]}
+                      scale={previewScale}
+                      position={{ x: layer.x, y: layer.y }}
+                      size={{ width: layer.width, height: layer.height }}
+                      onMouseDown={() => setSelectedLayerId(layer.id)}
+                      onDragStop={(e, d) => updateLayer(layer.id, { x: d.x, y: d.y })}
+                      onResizeStop={(e, dir, ref, delta, pos) => {
+                        updateLayer(layer.id, {
+                          width: parseFloat(ref.style.width),
+                          height: parseFloat(ref.style.height),
+                          x: pos.x,
+                          y: pos.y,
+                        })
+                      }}
+                      style={{
+                        zIndex: layer.zIndex,
+                        opacity: layer.visible ? layer.opacity : 0,
+                      }}
+                    >
+                      <div className="relative w-full h-full">
+                        <LayerContent layer={layer} />
+                        {selectedLayerId === layer.id && (
+                          <div className="absolute inset-0 border-2 border-cyan-400 shadow-[0_0_25px_rgba(34,211,238,0.9)] pointer-events-none" />
+                        )}
+                      </div>
+                    </Rnd>
+                  ))}
 
-                    {/* GRID */}
-                    {showGrid && (
-                      <div
-                        id="grid-overlay"
-                        className="absolute inset-0 pointer-events-none z-[9999]"
-                        style={{
-                          backgroundImage: `
+                  {/* GRID */}
+                  {showGrid && (
+                    <div
+                      id="grid-overlay"
+                      className="absolute inset-0 pointer-events-none z-[9999]"
+                      style={{
+                        backgroundImage: `
                             linear-gradient(to right, ${hexToRgbaStr(gridColor, gridOpacity)} 1px, transparent 1px),
                             linear-gradient(to bottom, ${hexToRgbaStr(gridColor, gridOpacity)} 1px, transparent 1px)
                           `,
-                          backgroundSize: '50px 50px',
-                        }}
-                      />
-                    )}
+                        backgroundSize: '50px 50px',
+                      }}
+                    />
+                  )}
 
-                  </div>
                 </div>
               </div>
             </div>
           </div>
-
         </div>
+
       </div>
-    </main>
+    </div>
+    </main >
   )
 }

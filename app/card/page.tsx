@@ -1,6 +1,7 @@
 'use client'
 
 import Image from 'next/image'
+import Link from 'next/link'
 import { toPng } from 'html-to-image'
 import { Rnd } from 'react-rnd'
 import { DragDropContext, Droppable, Draggable, DropResult } from '@hello-pangea/dnd'
@@ -563,6 +564,17 @@ export default function CardEditorPage() {
 
   return (
     <main className="min-h-screen bg-black text-white p-5">
+      {/* --- ここに追加してください --- */}
+      <div className="mb-6">
+        <Link 
+          href="/" 
+          className="inline-flex items-center gap-2 bg-zinc-800 hover:bg-zinc-700 text-white px-5 py-3 rounded-2xl font-bold transition-all border border-zinc-700 shadow-lg"
+        >
+          <span>🏠</span> トップページに戻る
+        </Link>
+      </div>
+      {/* --------------------------- */}
+
       {/* Google Fonts を動的に一括インポートするタグ */}
       <style dangerouslySetInnerHTML={{__html: `
         @import url('https://fonts.googleapis.com/css2?family=Hachi+Maru+Pop&family=Dela+Gothic+One&family=Stecki&family=Monomaniac+One&family=Walter+Turncoat&family=Rock+Salt&family=Bad+Script&family=Amatic+SC:wght@400;700&family=Allura&family=Tangerine:wght@700&family=Itim&display=swap');

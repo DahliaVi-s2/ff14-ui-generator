@@ -29,6 +29,7 @@ interface LayerItem {
   glowEnabled?: boolean
   glowColor?: string
   fontSize?: number
+  isVertical?: boolean
   shapeColor?: string
   borderRadius?: number
   x: number
@@ -60,29 +61,38 @@ const sizeTemplates = [
 ]
 
 const fonts = [
-  'Arial',
-  'Times New Roman',
-  'Georgia',
-  'Verdana',
-  'Trebuchet MS',
-  'Impact',
-  'Comic Sans MS',
-  'Courier New',
-  'cursive',
-  'fantasy',
-  'serif',
-  'sans-serif',
+  // --- 日本語フォント ---
+  { name: 'はちまるポップ', value: "'Hachi Maru Pop', sans-serif" },
+  { name: 'デラゴシック (Dela Gothic One)', value: "'Dela Gothic One', sans-serif" },
+  { name: 'ステッキ (Stecki)', value: "'Stecki', sans-serif" },
+  { name: 'ドットゴシック16', value: "'DotGothic16', sans-serif" },
+  { name: 'モノマニアック (Monomaniac One)', value: "'Monomaniac One', sans-serif" },
+  { name: 'M PLUS Rounded 1c (丸ゴシック)', value: "'M PLUS Rounded 1c', sans-serif" },
+  { name: 'Noto Serif JP (美麗明朝)', value: "'Noto Serif JP', serif" },
+  { name: 'Yomogi (手書き)', value: "'Yomogi', sans-serif" },
+
+  // --- 英語・装飾フォント ---
+  { name: 'Walter Turncoat', value: "'Walter Turncoat', cursive" },
+  { name: 'Rock Salt', value: "'Rock Salt', cursive" },
+  { name: 'Bad Script', value: "'Bad Script', cursive" },
+  { name: 'Amatic SC', value: "'Amatic SC', cursive" },
+  { name: 'Allura', value: "'Allura', cursive" },
+  { name: 'Tangerine', value: "'Tangerine', cursive" },
+  { name: 'Itim', value: "'Itim', cursive" },
+  { name: 'Cinzel Decorative', value: "'Cinzel Decorative', serif" },
+  { name: 'Great Vibes', value: "'Great Vibes', cursive" },
+  { name: 'Alex Brush', value: "'Alex Brush', cursive" },
+  { name: 'Caveat (洋風手書き)', value: "'Caveat', cursive" },
+  { name: 'Arial', value: 'Arial, sans-serif' },
+  { name: 'Times New Roman', value: "'Times New Roman', serif" },
+  { name: 'Impact', value: 'Impact, sans-serif' },
 ]
 
 /* =========================================================
    LAYER CONTENT
 ========================================================= */
 
-function LayerContent({
-  layer,
-}: {
-  layer: LayerItem
-}) {
+function LayerContent({ layer }: { layer: LayerItem }) {
   if (!layer) return null
 
   return (
@@ -100,11 +110,7 @@ function LayerContent({
           fill
           unoptimized
           draggable={false}
-          className="
-            pointer-events-none
-            select-none
-            object-contain
-          "
+          className="pointer-events-none select-none object-contain"
         />
       )}
 
@@ -119,7 +125,7 @@ function LayerContent({
             text-center
             whitespace-pre-wrap
             break-words
-            leading-none
+            leading-relaxed
             pointer-events-none
             select-none
           "
@@ -127,12 +133,13 @@ function LayerContent({
             fontFamily: layer.fontFamily,
             color: layer.textColor,
             fontSize: `${layer.fontSize}px`,
+            writingMode: layer.isVertical ? 'vertical-rl' : 'horizontal-tb',
+            WebkitWritingMode: layer.isVertical ? 'vertical-rl' : 'horizontal-tb',
             WebkitTextStroke: layer.strokeEnabled
-              ? `3px ${layer.strokeColor}`
+              ? `3px ${layer.strokeColor || '#000000'}`
               : '0px transparent',
             textShadow: layer.glowEnabled
-              ? `0 0 15px ${layer.glowColor},
-                 0 0 30px ${layer.glowColor}`
+              ? `0 0 12px ${layer.glowColor || '#ffffff'}, 0 0 24px ${layer.glowColor || '#ffffff'}`
               : 'none',
           }}
         >
@@ -173,7 +180,62 @@ export default function CardEditorPage() {
   const [selectedLayerId, setSelectedLayerId] = useState<string | null>(null)
 
   /* =========================================================
-     外側クリックによる選択解除のグローバル制御
+     履歴管理 (戻る / 進む) の仕組み
+  ========================================================= */
+  const [history, setHistory] = useState<{ layers: LayerItem[]; canvasWidth: number; canvasHeight: number }[]>([
+    { layers: [], canvasWidth: 1080, canvasHeight: 1350 }
+  ])
+  const [historyIndex, setHistoryIndex] = useState(0)
+
+  const saveToHistory = (newLayers: LayerItem[], currentW = canvasWidth, currentH = canvasHeight) => {
+    const cleanHistory = history.slice(0, historyIndex + 1)
+    setHistory([...cleanHistory, { layers: newLayers, canvasWidth: currentW, canvasHeight: currentH }])
+    setHistoryIndex(cleanHistory.length)
+  }
+
+  const handleUndo = () => {
+    if (historyIndex > 0) {
+      const targetIndex = historyIndex - 1
+      setHistoryIndex(targetIndex)
+      setLayers(history[targetIndex].layers)
+      setCanvasWidth(history[targetIndex].canvasWidth)
+      setCanvasHeight(history[targetIndex].canvasHeight)
+    }
+  }
+
+  const handleRedo = () => {
+    if (historyIndex < history.length - 1) {
+      const targetIndex = historyIndex + 1
+      setHistoryIndex(targetIndex)
+      setLayers(history[targetIndex].layers)
+      setCanvasWidth(history[targetIndex].canvasWidth)
+      setCanvasHeight(history[targetIndex].canvasHeight)
+    }
+  }
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      const isCmdOrCtrl = e.metaKey || e.ctrlKey
+      if (isCmdOrCtrl && e.key.toLowerCase() === 'z') {
+        e.preventDefault()
+        if (e.shiftKey) {
+          handleRedo()
+        } else {
+          handleUndo()
+        }
+      }
+      if (isCmdOrCtrl && e.key.toLowerCase() === 'y') {
+        e.preventDefault()
+        handleRedo()
+      }
+    }
+    window.addEventListener('keydown', handleKeyDown)
+    return () => window.removeEventListener('keydown', handleKeyDown)
+  }, [historyIndex, history])
+
+
+  /* =========================================================
+     外側クリックによる選択解除の制御
   ========================================================= */
   useEffect(() => {
     const handleGlobalClick = (e: MouseEvent) => {
@@ -210,7 +272,7 @@ export default function CardEditorPage() {
   }, [])
 
   /* =========================================================
-     MEMO (レイヤーのソート順)
+     MEMO (レイヤー順序)
   ========================================================= */
 
   const sortedLayers = useMemo(() => {
@@ -239,22 +301,27 @@ export default function CardEditorPage() {
      UPDATE & DRAG SORT
   ========================================================= */
 
-  const updateLayer = (
-    id: string,
-    updates: Partial<LayerItem>
-  ) => {
-    setLayers((prev) =>
-      (prev || []).map((layer) =>
+  const updateLayer = (id: string, updates: Partial<LayerItem>, skipHistory = false) => {
+    setLayers((prev) => {
+      const nextLayers = (prev || []).map((layer) =>
         layer.id === id ? { ...layer, ...updates } : layer
       )
-    )
+      if (!skipHistory) {
+        const cleanHistory = history.slice(0, historyIndex + 1)
+        setHistory([...cleanHistory, { layers: nextLayers, canvasWidth, canvasHeight }])
+        setHistoryIndex(cleanHistory.length)
+      }
+      return nextLayers
+    })
   }
 
   const removeLayer = (id: string) => {
-    setLayers((prev) => (prev || []).filter((l) => l.id !== id))
+    const nextLayers = (layers || []).filter((l) => l.id !== id)
+    setLayers(nextLayers)
     if (selectedLayerId === id) {
       setSelectedLayerId(null)
     }
+    saveToHistory(nextLayers)
   }
 
   const handleDragEnd = (result: DropResult) => {
@@ -264,26 +331,36 @@ export default function CardEditorPage() {
     const destIndex = result.destination.index
     if (sourceIndex === destIndex) return
 
-    const reordered = [...listOrderedLayers]
-    const [moved] = reordered.splice(sourceIndex, 1)
-    reordered.splice(destIndex, 0, moved)
+    setLayers((currentLayers) => {
+      const reordered = [...currentLayers].sort((a, b) => (b.zIndex || 0) - (a.zIndex || 0))
+      const [moved] = reordered.splice(sourceIndex, 1)
+      reordered.splice(destIndex, 0, moved)
 
-    const updated = reordered.map((layer, index) => ({
-      ...layer,
-      zIndex: reordered.length - index,
-    }))
+      const totalCount = reordered.length
+      const finalLayers = reordered.map((layer, index) => {
+        const newZIndex = totalCount - index
+        return {
+          ...layer,
+          zIndex: layer.isBackground ? 0 : newZIndex,
+        }
+      })
 
-    const finalLayers = updated.map(l => l.isBackground ? { ...l, zIndex: 0 } : l)
-    setLayers(finalLayers)
+      const cleanHistory = history.slice(0, historyIndex + 1)
+      setHistory([...cleanHistory, { layers: finalLayers, canvasWidth, canvasHeight }])
+      setHistoryIndex(cleanHistory.length)
+
+      return finalLayers
+    })
   }
 
   /* =========================================================
-     TEMPLATE
+     TEMPLATE & SIZE
   ========================================================= */
 
-  const applyTemplate = (width: number, height: number) => {
-    setCanvasWidth(width)
-    setCanvasHeight(height)
+  const changeCanvasDimensions = (w: number, h: number) => {
+    setCanvasWidth(w)
+    setCanvasHeight(h)
+    saveToHistory(layers, w, h)
   }
 
   const handleTemplateChange = (e: ChangeEvent<HTMLSelectElement>) => {
@@ -291,7 +368,7 @@ export default function CardEditorPage() {
     if (!selectedName) return
     const template = sizeTemplates.find((t) => t.name === selectedName)
     if (template) {
-      applyTemplate(template.width, template.height)
+      changeCanvasDimensions(template.width, template.height)
     }
   }
 
@@ -299,9 +376,7 @@ export default function CardEditorPage() {
      IMAGE LOAD
   ========================================================= */
 
-  const loadImage = (
-    file: File
-  ): Promise<{ src: string; width: number; height: number }> => {
+  const loadImage = (file: File): Promise<{ src: string; width: number; height: number }> => {
     return new Promise((resolve) => {
       const reader = new FileReader()
       reader.onloadend = () => {
@@ -345,12 +420,10 @@ export default function CardEditorPage() {
       isBackground: true,
     }
 
-    setLayers((prev) => {
-      const safePrev = prev || []
-      const withoutBackground = safePrev.filter((l) => !l.isBackground)
-      return [backgroundLayer, ...withoutBackground]
-    })
+    const nextLayers = [backgroundLayer, ...(layers || []).filter((l) => !l.isBackground)]
+    setLayers(nextLayers)
     setSelectedLayerId(backgroundLayer.id)
+    saveToHistory(nextLayers)
     e.target.value = ''
   }
 
@@ -390,8 +463,10 @@ export default function CardEditorPage() {
       zIndex: (layers || []).length + 1,
     }
 
-    setLayers((prev) => [...(prev || []), newLayer])
+    const nextLayers = [...(layers || []), newLayer]
+    setLayers(nextLayers)
     setSelectedLayerId(newLayer.id)
+    saveToHistory(nextLayers)
     e.target.value = ''
   }
 
@@ -401,13 +476,14 @@ export default function CardEditorPage() {
       type: 'text',
       name: 'テキスト',
       text: 'NEW TEXT',
-      fontFamily: 'Arial',
+      fontFamily: "'M PLUS Rounded 1c', sans-serif",
       textColor: '#ffffff',
       strokeEnabled: true,
       strokeColor: '#000000',
       glowEnabled: false,
       glowColor: '#ffffff',
       fontSize: 72,
+      isVertical: false,
       x: 250,
       y: 250,
       width: 600,
@@ -419,8 +495,10 @@ export default function CardEditorPage() {
       zIndex: (layers || []).length + 1,
     }
 
-    setLayers((prev) => [...(prev || []), newLayer])
+    const nextLayers = [...(layers || []), newLayer]
+    setLayers(nextLayers)
     setSelectedLayerId(newLayer.id)
+    saveToHistory(nextLayers)
   }
 
   const addShapeLayer = () => {
@@ -441,8 +519,10 @@ export default function CardEditorPage() {
       zIndex: (layers || []).length + 1,
     }
 
-    setLayers((prev) => [...(prev || []), newLayer])
+    const nextLayers = [...(layers || []), newLayer]
+    setLayers(nextLayers)
     setSelectedLayerId(newLayer.id)
+    saveToHistory(nextLayers)
   }
 
   /* =========================================================
@@ -483,6 +563,11 @@ export default function CardEditorPage() {
 
   return (
     <main className="min-h-screen bg-black text-white p-5">
+      {/* Google Fonts を動的に一括インポートするタグ */}
+      <style dangerouslySetInnerHTML={{__html: `
+        @import url('https://fonts.googleapis.com/css2?family=Hachi+Maru+Pop&family=Dela+Gothic+One&family=Stecki&family=Monomaniac+One&family=Walter+Turncoat&family=Rock+Salt&family=Bad+Script&family=Amatic+SC:wght@400;700&family=Allura&family=Tangerine:wght@700&family=Itim&display=swap');
+      `}} />
+
       <div className="max-w-[2200px] mx-auto">
         <h1 className="text-5xl font-black mb-6">FF14 Character Card Studio</h1>
 
@@ -490,6 +575,24 @@ export default function CardEditorPage() {
 
           {/* LEFT PANEL */}
           <div className="space-y-5">
+            {/* HISTORY (戻る / 進む ボタン) */}
+            <div className="bg-zinc-900 rounded-3xl p-4 grid grid-cols-2 gap-3">
+              <button 
+                onClick={handleUndo} 
+                disabled={historyIndex === 0}
+                className="bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 disabled:hover:bg-zinc-800 rounded-2xl py-3 px-4 font-bold transition-all text-sm flex items-center justify-center gap-2"
+              >
+                <span>⬅️</span> 戻る <span className="text-[10px] text-zinc-500 font-mono">Ctrl+Z</span>
+              </button>
+              <button 
+                onClick={handleRedo} 
+                disabled={historyIndex >= history.length - 1}
+                className="bg-zinc-800 hover:bg-zinc-700 disabled:opacity-30 disabled:hover:bg-zinc-800 rounded-2xl py-3 px-4 font-bold transition-all text-sm flex items-center justify-center gap-2"
+              >
+                進む <span>➡️</span> <span className="text-[10px] text-zinc-500 font-mono">Ctrl+Y</span>
+              </button>
+            </div>
+
             {/* SIZE */}
             <div className="bg-zinc-900 rounded-3xl p-5 space-y-5">
               <h2 className="text-3xl font-black">キャンバスサイズ</h2>
@@ -516,11 +619,11 @@ export default function CardEditorPage() {
                     <input
                       type="number"
                       value={canvasWidth}
-                      onChange={(e) => setCanvasWidth(Number(e.target.value))}
+                      onChange={(e) => changeCanvasDimensions(Number(e.target.value) || 300, canvasHeight)}
                       className="w-28 bg-zinc-800 rounded-xl px-3 py-2"
                     />
                   </div>
-                  <input type="range" min="300" max="5000" value={canvasWidth} onChange={(e) => setCanvasWidth(Number(e.target.value))} className="w-full" />
+                  <input type="range" min="300" max="5000" value={canvasWidth} onChange={(e) => changeCanvasDimensions(Number(e.target.value), canvasHeight)} className="w-full" />
                 </div>
 
                 <div>
@@ -529,11 +632,11 @@ export default function CardEditorPage() {
                     <input
                       type="number"
                       value={canvasHeight}
-                      onChange={(e) => setCanvasHeight(Number(e.target.value))}
+                      onChange={(e) => changeCanvasDimensions(canvasWidth, Number(e.target.value) || 300)}
                       className="w-28 bg-zinc-800 rounded-xl px-3 py-2"
                     />
                   </div>
-                  <input type="range" min="300" max="5000" value={canvasHeight} onChange={(e) => setCanvasHeight(Number(e.target.value))} className="w-full" />
+                  <input type="range" min="300" max="5000" value={canvasHeight} onChange={(e) => changeCanvasDimensions(canvasWidth, Number(e.target.value))} className="w-full" />
                 </div>
               </div>
             </div>
@@ -608,7 +711,7 @@ export default function CardEditorPage() {
                   <div
                     {...provided.droppableProps}
                     ref={provided.innerRef}
-                    className="space-y-3 max-h-[400px] overflow-auto pr-1"
+                    className="space-y-3 max-h-[260px] overflow-auto pr-1"
                   >
                     {listOrderedLayers.map((layer, index) => (
                       <Draggable key={layer.id} draggableId={layer.id} index={index}>
@@ -657,10 +760,38 @@ export default function CardEditorPage() {
 
             {/* EDIT */}
             {selectedLayer && (
-              <div className="border-t border-zinc-700 pt-4 space-y-4 max-h-[400px] overflow-auto pr-1">
+              <div className="border-t border-zinc-700 pt-4 space-y-4 max-h-[540px] overflow-auto pr-1">
                 <h3 className="text-2xl font-black text-cyan-400">レイヤー編集</h3>
                 
-                {/* 【追加】サイズ数値入力欄 (横幅・高さ) */}
+                {/* 座標数値入力欄 */}
+                <div className="grid grid-cols-2 gap-3 bg-zinc-950/40 p-3 rounded-2xl border border-zinc-800">
+                  <div>
+                    <p className="mb-1 text-[11px] font-bold text-zinc-400">位置 (X)</p>
+                    <div className="relative flex items-center">
+                      <input
+                        type="number"
+                        value={Math.round(selectedLayer.x)}
+                        onChange={(e) => updateLayer(selectedLayer.id, { x: Number(e.target.value) || 0 })}
+                        className="w-full bg-zinc-800 rounded-xl px-2.5 py-1.5 text-sm text-white font-bold border border-zinc-700"
+                      />
+                      <span className="absolute right-2 text-[10px] text-zinc-500 font-bold">px</span>
+                    </div>
+                  </div>
+                  <div>
+                    <p className="mb-1 text-[11px] font-bold text-zinc-400">位置 (Y)</p>
+                    <div className="relative flex items-center">
+                      <input
+                        type="number"
+                        value={Math.round(selectedLayer.y)}
+                        onChange={(e) => updateLayer(selectedLayer.id, { y: Number(e.target.value) || 0 })}
+                        className="w-full bg-zinc-800 rounded-xl px-2.5 py-1.5 text-sm text-white font-bold border border-zinc-700"
+                      />
+                      <span className="absolute right-2 text-[10px] text-zinc-500 font-bold">px</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* サイズ数値入力欄 */}
                 <div className="grid grid-cols-2 gap-3 bg-zinc-950/40 p-3 rounded-2xl border border-zinc-800">
                   <div>
                     <p className="mb-1 text-[11px] font-bold text-zinc-400">横幅 (W)</p>
@@ -671,7 +802,7 @@ export default function CardEditorPage() {
                         max="5000"
                         value={Math.round(selectedLayer.width)}
                         onChange={(e) => updateLayer(selectedLayer.id, { width: Number(e.target.value) || 1 })}
-                        className="w-full bg-zinc-800 rounded-xl px-2.5 py-1.5 text-sm text-white font-bold border border-zinc-700 focus:outline-none focus:border-cyan-500"
+                        className="w-full bg-zinc-800 rounded-xl px-2.5 py-1.5 text-sm text-white font-bold border border-zinc-700"
                       />
                       <span className="absolute right-2 text-[10px] text-zinc-500 font-bold">px</span>
                     </div>
@@ -685,7 +816,7 @@ export default function CardEditorPage() {
                         max="5000"
                         value={Math.round(selectedLayer.height)}
                         onChange={(e) => updateLayer(selectedLayer.id, { height: Number(e.target.value) || 1 })}
-                        className="w-full bg-zinc-800 rounded-xl px-2.5 py-1.5 text-sm text-white font-bold border border-zinc-700 focus:outline-none focus:border-cyan-500"
+                        className="w-full bg-zinc-800 rounded-xl px-2.5 py-1.5 text-sm text-white font-bold border border-zinc-700"
                       />
                       <span className="absolute right-2 text-[10px] text-zinc-500 font-bold">px</span>
                     </div>
@@ -725,12 +856,132 @@ export default function CardEditorPage() {
                 {selectedLayer.type === 'text' && (
                   <>
                     <textarea value={selectedLayer.text || ''} onChange={(e) => updateLayer(selectedLayer.id, { text: e.target.value })} className="w-full h-20 bg-zinc-800 rounded-2xl p-3 text-sm focus:outline-none focus:ring-1 focus:ring-cyan-500" />
-                    <select value={selectedLayer.fontFamily} onChange={(e) => updateLayer(selectedLayer.id, { fontFamily: e.target.value })} className="w-full bg-zinc-800 rounded-2xl p-2.5 text-sm">
-                      {fonts.map((font) => <option key={font} value={font}>{font}</option>)}
+                    
+                    {/* 文字の色 */}
+                    <div className="flex justify-between items-center text-xs font-bold text-zinc-400">
+                      <span>文字の色</span>
+                      <div className="flex items-center gap-2">
+                        <span className="font-mono uppercase text-[11px]">{selectedLayer.textColor}</span>
+                        <input 
+                          type="color" 
+                          value={selectedLayer.textColor || '#ffffff'} 
+                          onChange={(e) => updateLayer(selectedLayer.id, { textColor: e.target.value })} 
+                          className="w-8 h-8 rounded-lg border-0 cursor-pointer bg-transparent" 
+                        />
+                      </div>
+                    </div>
+
+                    {/* 文字の外枠（縁取り）設定 */}
+                    <div className="bg-zinc-950/30 p-3 rounded-2xl border border-zinc-800 space-y-3">
+                      <div className="flex justify-between items-center text-xs font-bold text-zinc-400">
+                        <span>文字の外枠（フチ）</span>
+                        <button
+                          type="button"
+                          onClick={() => updateLayer(selectedLayer.id, { strokeEnabled: !selectedLayer.strokeEnabled })}
+                          className={`px-3 py-1.5 rounded-xl border text-[11px] font-bold ${
+                            selectedLayer.strokeEnabled ? 'bg-cyan-600 border-cyan-400 text-white' : 'bg-zinc-800 border-zinc-700 text-zinc-400'
+                          }`}
+                        >
+                          {selectedLayer.strokeEnabled ? 'ON' : 'OFF'}
+                        </button>
+                      </div>
+                      {selectedLayer.strokeEnabled && (
+                        <div className="flex justify-between items-center text-xs font-bold text-zinc-400">
+                          <span>外枠のカラー</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono uppercase text-[11px]">{selectedLayer.strokeColor || '#000000'}</span>
+                            <input 
+                              type="color" 
+                              value={selectedLayer.strokeColor || '#000000'} 
+                              onChange={(e) => updateLayer(selectedLayer.id, { strokeColor: e.target.value })} 
+                              className="w-7 h-7 rounded-lg cursor-pointer bg-transparent" 
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 文字のネオン（光彩）設定 */}
+                    <div className="bg-zinc-950/30 p-3 rounded-2xl border border-zinc-800 space-y-3">
+                      <div className="flex justify-between items-center text-xs font-bold text-zinc-400">
+                        <span>ネオン（発光効果）</span>
+                        <button
+                          type="button"
+                          onClick={() => updateLayer(selectedLayer.id, { glowEnabled: !selectedLayer.glowEnabled })}
+                          className={`px-3 py-1.5 rounded-xl border text-[11px] font-bold ${
+                            selectedLayer.glowEnabled ? 'bg-purple-600 border-purple-400 text-white' : 'bg-zinc-800 border-zinc-700 text-zinc-400'
+                          }`}
+                        >
+                          {selectedLayer.glowEnabled ? 'ON' : 'OFF'}
+                        </button>
+                      </div>
+                      {selectedLayer.glowEnabled && (
+                        <div className="flex justify-between items-center text-xs font-bold text-zinc-400">
+                          <span>ネオンのカラー</span>
+                          <div className="flex items-center gap-2">
+                            <span className="font-mono uppercase text-[11px]">{selectedLayer.glowColor || '#ffffff'}</span>
+                            <input 
+                              type="color" 
+                              value={selectedLayer.glowColor || '#ffffff'} 
+                              onChange={(e) => updateLayer(selectedLayer.id, { glowColor: e.target.value })} 
+                              className="w-7 h-7 rounded-lg cursor-pointer bg-transparent" 
+                            />
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* 文字の方向 */}
+                    <div className="flex justify-between items-center text-xs font-bold text-zinc-400">
+                      <span>文字の方向</span>
+                      <button
+                        type="button"
+                        onClick={() => updateLayer(selectedLayer.id, { isVertical: !selectedLayer.isVertical })}
+                        className={`px-4 py-2 rounded-xl border font-bold transition-all ${
+                          selectedLayer.isVertical ? 'bg-cyan-600 border-cyan-400 text-white' : 'bg-zinc-800 border-zinc-700 text-zinc-300 hover:bg-zinc-700'
+                        }`}
+                      >
+                        {selectedLayer.isVertical ? '縦書き中' : '横書き中'}
+                      </button>
+                    </div>
+
+                    {/* フォント種類 */}
+                    <select
+                      value={selectedLayer.fontFamily}
+                      onChange={(e) => updateLayer(selectedLayer.id, { fontFamily: e.target.value })}
+                      className="w-full bg-zinc-800 rounded-2xl p-2.5 text-sm text-white font-bold"
+                    >
+                      {fonts.map((f) => (
+                        <option key={f.name} value={f.value}>
+                          {f.name}
+                        </option>
+                      ))}
                     </select>
-                    <div>
-                      <p className="mb-1 text-xs font-bold text-zinc-400">文字サイズ</p>
-                      <input type="range" min="12" max="300" value={selectedLayer.fontSize} onChange={(e) => updateLayer(selectedLayer.id, { fontSize: Number(e.target.value) })} className="w-full" />
+                    
+                    {/* 文字サイズ */}
+                    <div className="space-y-2">
+                      <div className="flex justify-between items-center">
+                        <p className="text-xs font-bold text-zinc-400">文字サイズ</p>
+                        <div className="relative flex items-center w-24">
+                          <input
+                            type="number"
+                            min="10"
+                            max="500"
+                            value={selectedLayer.fontSize || 72}
+                            onChange={(e) => updateLayer(selectedLayer.id, { fontSize: Number(e.target.value) || 12 })}
+                            className="w-full bg-zinc-800 rounded-xl px-2 py-1 text-xs text-white font-bold border border-zinc-700 text-center"
+                          />
+                          <span className="absolute right-1.5 text-[9px] text-zinc-500 font-bold">pt</span>
+                        </div>
+                      </div>
+                      <input 
+                        type="range" 
+                        min="12" 
+                        max="300" 
+                        value={selectedLayer.fontSize || 72} 
+                        onChange={(e) => updateLayer(selectedLayer.id, { fontSize: Number(e.target.value) })} 
+                        className="w-full accent-cyan-500" 
+                      />
                     </div>
                   </>
                 )}
@@ -753,15 +1004,18 @@ export default function CardEditorPage() {
                     {/* LAYERS */}
                     {sortedLayers.map((layer) => (
                       <Rnd
-                        key={layer.id}
+                        key={`${layer.id}-${layer.zIndex}`}
                         disableDragging={layer.locked}
                         enableResizing={!layer.locked}
                         dragGrid={[1, 1]}
                         resizeGrid={[1, 1]}
+                        scale={previewScale}
                         position={{ x: layer.x, y: layer.y }}
                         size={{ width: layer.width, height: layer.height }}
                         onMouseDown={() => setSelectedLayerId(layer.id)}
-                        onDragStop={(e, d) => updateLayer(layer.id, { x: d.x, y: d.y })}
+                        onDragStop={(e, d) => {
+                          updateLayer(layer.id, { x: d.x, y: d.y })
+                        }}
                         onResizeStop={(e, dir, ref, delta, pos) => {
                           updateLayer(layer.id, {
                             width: parseFloat(ref.style.width),
@@ -770,7 +1024,12 @@ export default function CardEditorPage() {
                             y: pos.y,
                           })
                         }}
-                        style={{ zIndex: layer.zIndex, opacity: layer.visible ? layer.opacity : 0 }}
+                        style={{
+                          zIndex: layer.zIndex,
+                          opacity: layer.visible ? layer.opacity : 0,
+                          left: `${layer.x}px`,
+                          top: `${layer.y}px`
+                        }}
                       >
                         <div className="relative w-full h-full">
                           <LayerContent layer={layer} />

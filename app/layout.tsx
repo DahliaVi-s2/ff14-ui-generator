@@ -25,22 +25,29 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="ja">
-
       <head>
-
-        <Script
-  async
-  src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1513145565902992"
-  crossOrigin="anonymous"
-  strategy="afterInteractive"
-/>
-
+        {/* Google Fonts 接続用 */}
+        <link rel="preconnect" href="https://fonts.googleapis.com" />
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossOrigin="anonymous" />
+        
+        {/* 新しいフォント（はちまるポップ、デラゴシック、ステッキ等）をすべて合流させたリンク */}
+        <link 
+          href="https://fonts.googleapis.com/css2?family=Alex+Brush&family=Caveat:wght@400..700&family=Cinzel+Decorative:wght@400;700;900&family=DotGothic16&family=Great+Vibes&family=M+PLUS+Rounded+1c:wght@400;700;900&family=Noto+Serif+JP:wght@400;700;900&family=Yomogi&family=Hachi+Maru+Pop&family=Dela+Gothic+One&family=Stecki&family=Monomaniac+One&family=Walter+Turncoat&family=Rock+Salt&family=Bad+Script&family=Amatic+SC:wght@400;700&family=Allura&family=Tangerine:wght@700&family=Itim&display=swap" 
+          rel="stylesheet" 
+        />
       </head>
 
-      <body>
+      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
         {children}
       </body>
 
+      {/* AdSense用のスクリプト */}
+      <Script
+        async
+        src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-1513145565902992"
+        crossOrigin="anonymous"
+        strategy="afterInteractive"
+      />
     </html>
   )
 }

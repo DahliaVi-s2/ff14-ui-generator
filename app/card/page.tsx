@@ -36,6 +36,7 @@ interface LayerItem {
   glowEnabled?: boolean
   glowColor?: string
   fontSize?: number
+  fontWeight?: string
   isVertical?: boolean
   shapeColor?: string
   borderRadius?: number
@@ -49,6 +50,7 @@ interface LayerItem {
   locked: boolean
   zIndex: number
   isBackground?: boolean
+  
 }
 
 const sizeTemplates = [
@@ -605,11 +607,12 @@ export default function CardEditorPage() {
 
             {/* EDIT */}
           {selectedLayer && (
-            <div className="border-t border-zinc-700 pt-4 space-y-4 max-h-[540px] overflow-auto pr-1">
+            <div className="border-t border-zinc-700 pt-4 space-y-4 max-h-[540px] overflow-auto pr-1" onMouseDown={(e) => e.stopPropagation()}>
               <h3 className="text-2xl font-black text-cyan-400">レイヤー編集</h3>
 
               {/* 座標とサイズ設定（全タイプ共通） */}
               <div className="grid grid-cols-2 gap-3 bg-zinc-950/40 p-3 rounded-2xl border border-zinc-800">
+                {/* (省略: 既存のX, Y, W, H入力欄) */}
                 <div>
                   <p className="mb-1 text-[11px] font-bold text-zinc-400">位置 (X)</p>
                   <input type="number" value={Math.round(selectedLayer.x)} onChange={(e) => updateLayer(selectedLayer.id, { x: Number(e.target.value) || 0 })} className="w-full bg-zinc-800 rounded-xl px-2.5 py-1.5 text-sm text-white font-bold border border-zinc-700" />
@@ -628,12 +631,22 @@ export default function CardEditorPage() {
                 </div>
               </div>
 
-              {/* 画像レイヤーの特殊設定 */}
-              {selectedLayer.type === 'image' && (
+              {/* 共通設定（不透明度・回転） */}
+              <div>
+                <p className="mb-1 text-xs font-bold text-zinc-400">不透明度</p>
+                <input type="range" min="0" max="1" step="0.01" value={selectedLayer.opacity} onChange={(e) => updateLayer(selectedLayer.id, { opacity: Number(e.target.value) })} className="w-full accent-cyan-500" />
+              </div>
+              <div>
+                <p className="mb-1 text-xs font-bold text-zinc-400">回転角度</p>
+                <input type="range" min="-180" max="180" value={selectedLayer.rotation} onChange={(e) => updateLayer(selectedLayer.id, { rotation: Number(e.target.value) })} className="w-full" />
+              </div>
+
+              {/* 図形・画像の設定 */}
+              {(selectedLayer.type === 'image' || selectedLayer.type === 'shape') && (
                 <div className="space-y-4 bg-zinc-950/40 p-4 rounded-2xl border border-zinc-800">
-                  <h3 className="font-bold text-lg border-b border-zinc-700 pb-2">画像設定</h3>
+                  <h3 className="font-bold text-lg border-b border-zinc-700 pb-2">{selectedLayer.type === 'image' ? '画像' : '図形'}設定</h3>
                   <div>
-                    <label className="block text-sm mb-1 text-zinc-400">アイコンの色</label>
+                    <label className="block text-sm mb-1 text-zinc-400">色・カラー</label>
                     <input
                       type="color"
                       value={selectedLayer.shapeColor || '#000000'}
@@ -651,28 +664,62 @@ export default function CardEditorPage() {
                 </div>
               )}
 
-              {/* 共通設定（不透明度・回転） */}
-              <div>
-                <p className="mb-1 text-xs font-bold text-zinc-400">不透明度</p>
-                <input type="range" min="0" max="1" step="0.01" value={selectedLayer.opacity} onChange={(e) => updateLayer(selectedLayer.id, { opacity: Number(e.target.value) })} className="w-full accent-cyan-500" />
-              </div>
-              <div>
-                <p className="mb-1 text-xs font-bold text-zinc-400">回転角度</p>
-                <input type="range" min="-180" max="180" value={selectedLayer.rotation} onChange={(e) => updateLayer(selectedLayer.id, { rotation: Number(e.target.value) })} className="w-full" />
-              </div>
-
               {/* テキスト用編集 */}
               {selectedLayer.type === 'text' && (
-                <div className="space-y-4">
-                  <textarea value={selectedLayer.text || ''} onChange={(e) => updateLayer(selectedLayer.id, { text: e.target.value })} className="w-full h-20 bg-zinc-800 rounded-2xl p-3 text-sm focus:outline-none" />
-                  <div className="flex justify-between items-center text-xs font-bold text-zinc-400">
-                    <span>文字の色</span>
-                    <input type="color" value={selectedLayer.textColor || '#ffffff'} onChange={(e) => updateLayer(selectedLayer.id, { textColor: e.target.value })} className="w-8 h-8 rounded-lg cursor-pointer" />
+                <div 
+                  className="space-y-4" 
+                  onMouseDown={(e) => e.stopPropagation()}
+                >
+                  <textarea 
+                    value={selectedLayer.text || ''} 
+                    onChange={(e) => updateLayer(selectedLayer.id, { text: e.target.value })} 
+                    className="w-full h-20 bg-zinc-800 rounded-2xl p-3 text-sm focus:outline-none" 
+                  />
+
+                  {/* サイズ・太さ・フォント */}
+                  <div className="grid grid-cols-2 gap-3">
+                    <div>
+                      <p className="text-xs font-bold text-zinc-400 mb-1">サイズ ({selectedLayer.fontSize || 16}px)</p>
+                      <input type="range" min="8" max="200" value={selectedLayer.fontSize || 16} onChange={(e) => updateLayer(selectedLayer.id, { fontSize: Number(e.target.value) })} className="w-full accent-cyan-500" />
+                    </div>
+                    <div>
+                      <p className="text-xs font-bold text-zinc-400 mb-1">太さ</p>
+                      <select value={selectedLayer.fontWeight || '400'} onChange={(e) => updateLayer(selectedLayer.id, { fontWeight: e.target.value })} className="w-full bg-zinc-800 rounded-xl p-2 text-sm border border-zinc-700">
+                        <option value="400">標準</option>
+                        <option value="600">中太</option>
+                        <option value="700">太字</option>
+                        <option value="900">極太</option>
+                      </select>
+                    </div>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-bold text-zinc-400 mb-1">フォント</p>
+                    <select value={selectedLayer.fontFamily || ''} onChange={(e) => updateLayer(selectedLayer.id, { fontFamily: e.target.value })} className="w-full bg-zinc-800 rounded-xl p-2 text-sm border border-zinc-700">
+                      {fonts.map(font => <option key={font.value} value={font.value}>{font.name}</option>)}
+                    </select>
+                  </div>
+
+                  {/* カラー・発光 */}
+                  <div className="space-y-3 bg-zinc-950/40 p-3 rounded-2xl border border-zinc-800">
+                    <div className="flex justify-between items-center text-xs font-bold text-zinc-400">
+                      <span>文字の色</span>
+                      <input type="color" value={selectedLayer.textColor || '#ffffff'} onChange={(e) => updateLayer(selectedLayer.id, { textColor: e.target.value })} className="w-8 h-8 rounded-lg cursor-pointer" />
+                    </div>
+                    <div className="flex justify-between items-center text-xs font-bold text-zinc-400">
+                      <span>枠線の色</span>
+                      <input type="color" value={selectedLayer.strokeColor || '#000000'} onChange={(e) => updateLayer(selectedLayer.id, { strokeColor: e.target.value })} className="w-8 h-8 rounded-lg cursor-pointer" />
+                    </div>
+                    <label className="flex justify-between items-center text-xs font-bold text-zinc-400 cursor-pointer">
+                      <span>テキスト発光</span>
+                      <input type="checkbox" checked={!!selectedLayer.glowEnabled} onChange={(e) => updateLayer(selectedLayer.id, { glowEnabled: e.target.checked })} className="w-5 h-5 accent-cyan-500" />
+                    </label>
                   </div>
                 </div>
               )}
             </div>
           )}
+
           </div>
 
         {/* CANVAS (PREVIEW) */}
